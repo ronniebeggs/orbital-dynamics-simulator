@@ -9,7 +9,9 @@ G = 6.67408 * (10**-11)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREY = (200, 200, 200)
-RED = (255, 000, 000) 
+RED = (255, 000, 000)
+BLUE = (000, 000, 255)
+GREEN = (000, 255, 000)
 ORANGE = (255, 165, 000)
 
 
@@ -31,13 +33,13 @@ class Mass:
     def __repr__(self):
         return self.name
     
-    def gravitational_influence(self, time_interval, barrycenter):
-        deltax = self.xpos - barrycenter.xpos
-        deltay = self.ypos - barrycenter.ypos
+    def gravitational_influence(self, time_interval, relative_center):
+        deltax = self.xpos - relative_center.xpos
+        deltay = self.ypos - relative_center.ypos
         distance = math.sqrt((deltax**2) + (deltay**2))
 
         #force of gravity calculated using Newton's Law of Gravition (G defined globally above)
-        force_gravity = (G*self.mass*barrycenter.mass) / (distance**2)
+        force_gravity = (G*self.mass*relative_center.mass) / (distance**2)
         #angles drawn from the space craft
         theta = math.atan2(deltay, deltax)
 
@@ -59,10 +61,10 @@ class Mass:
 
 class SpaceCraft:
 
-    def __init__(self, name, mass, radius, init_xpos=0, init_ypos=0, init_xvelo=0, init_yvelo=0):
+    def __init__(self, name, mass, length, init_xpos=0, init_ypos=0, init_xvelo=0, init_yvelo=0):
         self.name = name
         self.mass = mass
-        self.radius = radius
+        self.length = length
         self.xpos = init_xpos
         self.ypos = init_ypos
         self.xvelo = init_xvelo
@@ -106,6 +108,49 @@ class SpaceCraft:
         self.xpos += self.xvelo * time_interval
         self.ypos += self.yvelo * time_interval
 
+    #input display x-y positions along with a scale factor
+    def drawCraft(self, screen, xpos, ypos, SCALE_FACTOR):
+
+        tank_length = (1/(SCALE_FACTOR/200)) * self.length * (2/3)
+        tank_width = tank_length / 3
+        tank_diagonal = math.sqrt(tank_length**2 + tank_width**2)
+        tail_diagonal = math.sqrt((tank_length)**2 + (2*tank_width)**2)
+        
+        #determines the direction to point the craft based on its velocity
+        nose_direction = math.atan2(self.yvelo, self.xvelo)
+        nose_pos = [xpos + math.cos(nose_direction)*(tank_length*2), ypos + math.sin(nose_direction)*(tank_length*2)]
+
+        #p1-4: four edges of the tank in counterclockwise order starting from top left (when the craft is pointed left)
+        p1_angle = nose_direction - math.atan2(tank_width, tank_length)
+        p2_angle = nose_direction + math.atan2(tank_width, tank_length)
+        p3_angle = p1_angle + math.pi
+        p4_angle = p2_angle - math.pi
+        
+        p1_pos = [xpos + math.cos(p1_angle)*(tank_diagonal), ypos + math.sin(p1_angle)*(tank_diagonal)]
+        p2_pos = [xpos + math.cos(p2_angle)*(tank_diagonal), ypos + math.sin(p2_angle)*(tank_diagonal)]
+        p3_pos = [xpos + math.cos(p3_angle)*(tank_diagonal), ypos + math.sin(p3_angle)*(tank_diagonal)]
+        p4_pos = [xpos + math.cos(p4_angle)*(tank_diagonal), ypos + math.sin(p4_angle)*(tank_diagonal)]
+
+        tank_points = [p1_pos, p2_pos, p3_pos, p4_pos]
+        nose_points = [p1_pos, p2_pos, nose_pos]
+
+        tail1_points = [
+            [xpos + math.cos(nose_direction - math.pi/2)*(tank_width), ypos + math.sin(nose_direction - math.pi/2)*(tank_width)], 
+            [xpos + math.cos(nose_direction - 2.5)*(tail_diagonal), ypos + math.sin(nose_direction - 2.5)*(tail_diagonal)], 
+            p4_pos
+            ]
+
+        tail2_points = [
+            [xpos + math.cos(nose_direction + math.pi/2)*(tank_width), ypos + math.sin(nose_direction + math.pi/2)*(tank_width)], 
+            [xpos + math.cos(nose_direction + 2.5)*(tail_diagonal), ypos + math.sin(nose_direction + 2.5)*(tail_diagonal)], 
+            p3_pos
+            ]
+
+        pygame.draw.polygon(screen, RED, nose_points)
+        pygame.draw.polygon(screen, RED, tail1_points)
+        pygame.draw.polygon(screen, RED, tail2_points)
+        pygame.draw.polygon(screen, GREY, tank_points)
+        
 
 
 def scale_converter(real_distance, SCALE_FACTOR):
@@ -116,43 +161,45 @@ def scale_converter(real_distance, SCALE_FACTOR):
 
 #initialize each planetary body
 #name, mass, radius, stationary, orbital_radius
-earth = Mass("Earth", 5.97*(10**24), 6378, False, 149.6*(10**6))
-sun = Mass("Sun", 1.99*(10**30), 6.96*(10**5), True, 0)
+earth = Mass("Earth", 5.97*(10**24), 6378, True, 149.6*(10**6))
+#sun = Mass("Sun", 1.99*(10**30), 6.96*(10**5), True, 0)
 
-body_list = (earth, sun)
+body_list = [earth]#, sun)
 
-starship = SpaceCraft("starship", 10, 1, (149.6*(10**6)+35785), 0, 0, 3070)
+#SpaceCraft: name, mass, length, init_xpos=0, init_ypos=0, init_xvelo=0, init_yvelo=0
+starship = SpaceCraft("starship", 10, 30, 100000, 0, 0, -19843)
 
 
 
 #parameters: display dimensions, simulation width included in the display window, iteration pause interval
-def main(screen_width, screen_height, simulation_width, iteration_pause):
+def main(screen_width, screen_height, simulation_width, time_step, iteration_pause):
 
     #display infomation and dimensions
     DP_WIDTH, DP_HEIGHT = screen_width, screen_height    
     REAL_WIDTH = simulation_width #raw width of the display in km
     SCALE_FACTOR = round(REAL_WIDTH / DP_WIDTH) #ratio of km:1 pixel
     TARGET = starship #either a class object or x-y coordinates
+    step_options = (0.001, 0.01, 0.1, 0.2) #base, 5 min orbit, 30 second, time-skip
 
     #starship will always have the 0 index
     target_list = [starship]
     for body in body_list:
         target_list.append(body)
     
-    barrycenter = None
+    relative_center = None
     for body in body_list:
         if body.stationary == True:
-            barrycenter = body
+            relative_center = body
             body.xpos, body.ypos = 0, 0
             body.xvelo, body.xvelo = 0, 0
             break
     
     for body in body_list:
-        if body != barrycenter:
-            body.xpos = body.orbital_radius + barrycenter.xpos
-            body.ypos = barrycenter.ypos
+        if body != relative_center:
+            body.xpos = body.orbital_radius + relative_center.xpos
+            body.ypos = relative_center.ypos
             body.xvelo = 0
-            body.yvelo = math.sqrt(G*barrycenter.mass*(1/body.orbital_radius)) 
+            body.yvelo = math.sqrt(G*relative_center.mass*(1/body.orbital_radius)) 
 
     #initializes pygame library tools and display window
     pygame.init()
@@ -171,14 +218,14 @@ def main(screen_width, screen_height, simulation_width, iteration_pause):
             if event.type == pygame.QUIT:
                 running = False
 
-            #zoom in or out using up and down keys, respectively
             if event.type == pygame.KEYDOWN:
                 
+                #zoom in or out using up and down keys, respectively
                 if event.key == pygame.K_1:
-                    SCALE_FACTOR = round(0.5 * SCALE_FACTOR)
+                    SCALE_FACTOR = round(0.8 * SCALE_FACTOR)
                 if event.key == pygame.K_2:
-                    SCALE_FACTOR = round(2 * SCALE_FACTOR)
-
+                    SCALE_FACTOR = round(1.2 * SCALE_FACTOR)
+                #switch the target object
                 if event.key == pygame.K_q:
                     if target_list.index(TARGET)+1 == len(target_list):
                         TARGET = target_list[0]
@@ -189,16 +236,22 @@ def main(screen_width, screen_height, simulation_width, iteration_pause):
                         TARGET = target_list[0]
                     else:
                         TARGET = target_list[target_list.index(TARGET)-1]   
-
-
+                #change the simulation speed
+                if event.key == pygame.K_z:
+                    if step_options.index(time_step)+1 != len(step_options):
+                        time_step = step_options[step_options.index(time_step)+1]
+                if event.key == pygame.K_x:
+                    if step_options.index(time_step) > 0:
+                        time_step = step_options[step_options.index(time_step)-1]
+                           
         #calculate gravity's influence on each orbiting body
         for body in body_list:
-            if body != barrycenter:
-                body.gravitational_influence(0.01, barrycenter)
-                body.deltaPosition(0.01)
+            if body != relative_center:
+                body.gravitational_influence(time_step, relative_center)
+                body.deltaPosition(time_step)
 
-        starship.gravitational_influence(0.01)
-        starship.deltaPosition(0.01)
+        starship.gravitational_influence(time_step)
+        starship.deltaPosition(time_step)
         
         DP_CENTER_X = DP_WIDTH/2 + (-1 * scale_converter(TARGET.xpos, SCALE_FACTOR))
         DP_CENTER_Y = DP_HEIGHT/2 + (-1 * scale_converter(TARGET.ypos, SCALE_FACTOR))
@@ -212,15 +265,14 @@ def main(screen_width, screen_height, simulation_width, iteration_pause):
             pygame.draw.polygon(screen, ORANGE, [dp_position, [dp_position[0]+5, dp_position[1]-10], [dp_position[0]-5, dp_position[1]-10]])
         
         #draw craft
-        craft_dp_position = [DP_CENTER_X + scale_converter(starship.xpos, SCALE_FACTOR), DP_CENTER_Y + scale_converter(starship.ypos, SCALE_FACTOR)]
-        #using an inverse tangent function allows the starship to scale according to two asymptotes
-        craft_dp_radius = -20*math.atan(0.1*SCALE_FACTOR - 12) + 35
-        pygame.draw.circle(screen, GREY, craft_dp_position, starship.radius)
+        craft_dp_xpos = DP_CENTER_X + scale_converter(starship.xpos, SCALE_FACTOR)
+        craft_dp_ypos = DP_CENTER_Y + scale_converter(starship.ypos, SCALE_FACTOR)
         #pygame.draw.polygon(screen, RED, [craft_dp_position, [craft_dp_position[0]+5, craft_dp_position[1]-10], [craft_dp_position[0]-5, craft_dp_position[1]-10]])
-        
+        starship.drawCraft(screen, craft_dp_xpos, craft_dp_ypos, SCALE_FACTOR)
+
         pygame.display.set_caption(str(i))
         pygame.display.update()
         time.sleep(iteration_pause)
 
 #parameters: real width included in the display window, iteration pause interval
-main(1000, 1000, 100000, 0.01)
+main(1000, 1000, 2000000, 0.01, 0.01)

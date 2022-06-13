@@ -1,10 +1,10 @@
 import math
 import time
 import pygame
-from pygame.locals import *
+#import sys
 
 #defining global variables/tuples here:
-G = 6.67408 * (10**-11)
+G = 6.67408*(10**-11)
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -17,29 +17,37 @@ ORANGE = (255, 165, 000)
 
 class Mass:
 
-    def __init__(self, name, mass, radius, stationary, orbital_radius):
-        #characteristics about the mass
+    def __init__(self, name, mass, radius, parent_body, orbital_radius, true_anomaly=0, orbital_velo=None):
+        #characteristics about the planetary mass
         self.name = name
         self.mass = mass
         self.radius = radius
-        self.stationary = stationary
-        self.orbital_radius = orbital_radius
+        self.parent_body = parent_body #planet which the mass orbits around
+        self.orbital_radius = orbital_radius #initial distance to the parent body
+        self.true_anomaly = true_anomaly #initial placement of the planet using polar coordinates
+        
+        if self.parent_body != None:
+            #circular orbit assumed if no initial tangential velocity is provided
+            if orbital_velo == None:
+                orbital_velo = -1*math.sqrt((G*self.parent_body.mass)/(1000*self.orbital_radius)) / 1000
 
-        self.xpos = 0
-        self.ypos = 0
-        self.xvelo = 0
-        self.yvelo = 0
+            self.xvelo = orbital_velo*math.cos(self.true_anomaly+math.pi/2)
+            self.yvelo = orbital_velo*math.sin(self.true_anomaly+math.pi/2)
+        else:
+            self.xpos, self.ypos = 0, 0
+            self.xvelo, self.yvelo = 0, 0
+
 
     def __repr__(self):
         return self.name
     
-    def gravitational_influence(self, time_interval, relative_center):
-        deltax = self.xpos - relative_center.xpos
-        deltay = self.ypos - relative_center.ypos
+    def gravitational_influence(self, time_interval):
+        deltax = self.xpos - self.parent_body.xpos
+        deltay = self.ypos - self.parent_body.ypos
         distance = math.sqrt((deltax**2) + (deltay**2))
 
         #force of gravity calculated using Newton's Law of Gravition (G defined globally above)
-        force_gravity = (G*self.mass*relative_center.mass) / (distance**2)
+        force_gravity = ((G*self.mass*self.parent_body.mass) / (1000*distance)**2) / 1000
         #angles drawn from the space craft
         theta = math.atan2(deltay, deltax)
 
@@ -61,14 +69,21 @@ class Mass:
 
 class SpaceCraft:
 
-    def __init__(self, name, mass, length, init_xpos=0, init_ypos=0, init_xvelo=0, init_yvelo=0):
+    def __init__(self, name, mass, length, initial_parent, orbital_radius, true_anomaly=0, orbital_velo=None):
         self.name = name
         self.mass = mass
         self.length = length
-        self.xpos = init_xpos
-        self.ypos = init_ypos
-        self.xvelo = init_xvelo
-        self.yvelo = init_yvelo
+        self.initial_parent = initial_parent
+        self.orbital_radius = orbital_radius #initial distance to the parent body
+        self.true_anomaly = true_anomaly #initial placement of the planet using polar coordinates
+        #circular orbit assumed if no initial tangential velocity is provided
+        if orbital_velo == None:
+            orbital_velo = -1*math.sqrt((G*self.initial_parent.mass)/(1000*self.orbital_radius)) / 1000 #convert m/s to km/s
+
+        self.xvelo = orbital_velo*math.cos(self.true_anomaly+math.pi/2)
+        self.yvelo = orbital_velo*math.sin(self.true_anomaly+math.pi/2)
+        self.xpos, self.ypos = 0, 0
+
 
     def __repr__(self):
         return self.name
@@ -84,10 +99,10 @@ class SpaceCraft:
             distance = math.sqrt((deltax**2) + (deltay**2))
 
             #force of gravity calculated using Newton's Law of Gravition (G defined globally above)
-            force_gravity = (G*self.mass*body.mass) / (distance**2)
+            force_gravity = ((G*self.mass*body.mass) / (1000*distance)**2) / 1000
             theta = math.atan2(deltay, deltax)
 
-            gravity_vectors.append([force_gravity, theta])
+            gravity_vectors.append((force_gravity, theta))
 
         net_xforce, net_yforce = 0, 0
         for vector in gravity_vectors:
@@ -102,72 +117,73 @@ class SpaceCraft:
         self.xvelo += net_xaccel * time_interval
         self.yvelo += net_yaccel * time_interval	
 
-
     def deltaPosition(self, time_interval):
         #determines the change in position over the same time step interval
         self.xpos += self.xvelo * time_interval
         self.ypos += self.yvelo * time_interval
 
-    #input display x-y positions along with a scale factor
-    def drawCraft(self, screen, xpos, ypos, SCALE_FACTOR):
+    def craftThrust(self):
+        pass
 
+    def drawCraft(self, screen, xpos, ypos, SCALE_FACTOR):
+        ### input display x-y positions along with a scale factor
+        #calculates the measurements of the craft given its total length
         tank_length = (1/(SCALE_FACTOR/200)) * self.length * (2/3)
         tank_width = tank_length / 3
         tank_diagonal = math.sqrt(tank_length**2 + tank_width**2)
         tail_diagonal = math.sqrt((tank_length)**2 + (2*tank_width)**2)
         
-        #determines the direction to point the craft based on its velocity
+        #determines the direction of the craft based on its velocity
         nose_direction = math.atan2(self.yvelo, self.xvelo)
-        nose_pos = [xpos + math.cos(nose_direction)*(tank_length*2), ypos + math.sin(nose_direction)*(tank_length*2)]
+        nose_pos = (xpos + math.cos(nose_direction)*(tank_length*2), ypos + math.sin(nose_direction)*(tank_length*2))
 
-        #p1-4: four edges of the tank in counterclockwise order starting from top left (when the craft is pointed left)
+        #p1-4: four edges of the tank in counterclockwise order starting from top right (when the craft is pointed up)
         p1_angle = nose_direction - math.atan2(tank_width, tank_length)
         p2_angle = nose_direction + math.atan2(tank_width, tank_length)
         p3_angle = p1_angle + math.pi
         p4_angle = p2_angle - math.pi
         
-        p1_pos = [xpos + math.cos(p1_angle)*(tank_diagonal), ypos + math.sin(p1_angle)*(tank_diagonal)]
-        p2_pos = [xpos + math.cos(p2_angle)*(tank_diagonal), ypos + math.sin(p2_angle)*(tank_diagonal)]
-        p3_pos = [xpos + math.cos(p3_angle)*(tank_diagonal), ypos + math.sin(p3_angle)*(tank_diagonal)]
-        p4_pos = [xpos + math.cos(p4_angle)*(tank_diagonal), ypos + math.sin(p4_angle)*(tank_diagonal)]
+        #craft is drawn relative using polar coordinates relative to its display center
+        p1_pos = (xpos + math.cos(p1_angle)*(tank_diagonal), ypos + math.sin(p1_angle)*(tank_diagonal))
+        p2_pos = (xpos + math.cos(p2_angle)*(tank_diagonal), ypos + math.sin(p2_angle)*(tank_diagonal))
+        p3_pos = (xpos + math.cos(p3_angle)*(tank_diagonal), ypos + math.sin(p3_angle)*(tank_diagonal))
+        p4_pos = (xpos + math.cos(p4_angle)*(tank_diagonal), ypos + math.sin(p4_angle)*(tank_diagonal))
 
-        tank_points = [p1_pos, p2_pos, p3_pos, p4_pos]
-        nose_points = [p1_pos, p2_pos, nose_pos]
-
-        tail1_points = [
-            [xpos + math.cos(nose_direction - math.pi/2)*(tank_width), ypos + math.sin(nose_direction - math.pi/2)*(tank_width)], 
-            [xpos + math.cos(nose_direction - 2.5)*(tail_diagonal), ypos + math.sin(nose_direction - 2.5)*(tail_diagonal)], 
+        #all points are collected 
+        tank_points = (p1_pos, p2_pos, p3_pos, p4_pos)
+        nose_points = (p1_pos, p2_pos, nose_pos)
+        right_tail_points = (
+            (xpos + math.cos(nose_direction - math.pi/2)*(tank_width), ypos + math.sin(nose_direction - math.pi/2)*(tank_width)), 
+            (xpos + math.cos(nose_direction - 2.5)*(tail_diagonal), ypos + math.sin(nose_direction - 2.5)*(tail_diagonal)), 
             p4_pos
-            ]
-
-        tail2_points = [
-            [xpos + math.cos(nose_direction + math.pi/2)*(tank_width), ypos + math.sin(nose_direction + math.pi/2)*(tank_width)], 
-            [xpos + math.cos(nose_direction + 2.5)*(tail_diagonal), ypos + math.sin(nose_direction + 2.5)*(tail_diagonal)], 
+        )
+        left_tail_points = (
+            (xpos + math.cos(nose_direction + math.pi/2)*(tank_width), ypos + math.sin(nose_direction + math.pi/2)*(tank_width)), 
+            (xpos + math.cos(nose_direction + 2.5)*(tail_diagonal), ypos + math.sin(nose_direction + 2.5)*(tail_diagonal)), 
             p3_pos
-            ]
-
+        )
+        #each part of the craft is drawn as separate polygons
         pygame.draw.polygon(screen, RED, nose_points)
-        pygame.draw.polygon(screen, RED, tail1_points)
-        pygame.draw.polygon(screen, RED, tail2_points)
+        pygame.draw.polygon(screen, RED, right_tail_points)
+        pygame.draw.polygon(screen, RED, left_tail_points)
         pygame.draw.polygon(screen, GREY, tank_points)
         
 
-
 def scale_converter(real_distance, SCALE_FACTOR):
-
     scaled_distance = real_distance / SCALE_FACTOR
     return round(scaled_distance)
 
 
-#initialize each planetary body
-#name, mass, radius, stationary, orbital_radius
-earth = Mass("Earth", 5.97*(10**24), 6378, True, 149.6*(10**6))
-#sun = Mass("Sun", 1.99*(10**30), 6.96*(10**5), True, 0)
+
+#initialize relative center of the simulation and any planets/moons below it
+#Planetary Mass: name, mass, radius, parent_planet, orbital_radius
+earth = Mass("Earth", 5.97*(10**24), 6378, None, 149.6*(10**6))
 
 body_list = [earth]#, sun)
 
-#SpaceCraft: name, mass, length, init_xpos=0, init_ypos=0, init_xvelo=0, init_yvelo=0
-starship = SpaceCraft("starship", 10, 30, 100000, 0, 0, -19843)
+#SpaceCraft: name, mass, length, initial_parent, orbital_radius, true_anomaly=0, orbital_velo=None
+#if no value inputed for initial velocity, it will assume a circular orbit
+starship = SpaceCraft("starship", 10, 3, earth, 7878, 0, -11)
 
 
 
@@ -179,27 +195,34 @@ def main(screen_width, screen_height, simulation_width, time_step, iteration_pau
     REAL_WIDTH = simulation_width #raw width of the display in km
     SCALE_FACTOR = round(REAL_WIDTH / DP_WIDTH) #ratio of km:1 pixel
     TARGET = starship #either a class object or x-y coordinates
-    step_options = (0.001, 0.01, 0.1, 0.2) #base, 5 min orbit, 30 second, time-skip
+    step_options = (0.001, 0.01, 0.1, 0.2, 1, 5) #base, 5 min orbit, 30 second, time-skip
 
     #starship will always have the 0 index
     target_list = [starship]
     for body in body_list:
         target_list.append(body)
     
+    #sets up the initial conditions of the universe relative to some point/planet
     relative_center = None
     for body in body_list:
-        if body.stationary == True:
+        if body.parent_body == None:
             relative_center = body
             body.xpos, body.ypos = 0, 0
             body.xvelo, body.xvelo = 0, 0
             break
     
+    #places each planet in orbits around their parent planets, everything of which is relative to the center
     for body in body_list:
         if body != relative_center:
-            body.xpos = body.orbital_radius + relative_center.xpos
-            body.ypos = relative_center.ypos
-            body.xvelo = 0
-            body.yvelo = math.sqrt(G*relative_center.mass*(1/body.orbital_radius)) 
+            body.xpos = body.orbital_radius*math.cos(body.true_anomaly) + body.parent_body.xpos
+            body.ypos = body.orbital_radius*math.sin(body.true_anomaly) + body.parent_body.ypos
+            body.xvelo += body.parent_body.xvelo
+            body.yvelo += body.parent_body.yvelo
+
+    starship.xpos = starship.orbital_radius*math.cos(starship.true_anomaly) + starship.initial_parent.xpos
+    starship.ypos = starship.orbital_radius*math.sin(starship.true_anomaly) + starship.initial_parent.ypos
+    starship.xvelo += starship.initial_parent.xvelo
+    starship.yvelo += starship.initial_parent.yvelo
 
     #initializes pygame library tools and display window
     pygame.init()
@@ -247,7 +270,7 @@ def main(screen_width, screen_height, simulation_width, time_step, iteration_pau
         #calculate gravity's influence on each orbiting body
         for body in body_list:
             if body != relative_center:
-                body.gravitational_influence(time_step, relative_center)
+                body.gravitational_influence(time_step)
                 body.deltaPosition(time_step)
 
         starship.gravitational_influence(time_step)
@@ -259,17 +282,17 @@ def main(screen_width, screen_height, simulation_width, time_step, iteration_pau
         screen.fill(BLACK)
         #draw planets
         for body in body_list:
-            dp_position = [DP_CENTER_X + scale_converter(body.xpos, SCALE_FACTOR), DP_CENTER_Y + scale_converter(body.ypos, SCALE_FACTOR)]
+            dp_position = (DP_CENTER_X + scale_converter(body.xpos, SCALE_FACTOR), DP_CENTER_Y + scale_converter(body.ypos, SCALE_FACTOR))
             #draw.circle(surface, color, center, radius)
             pygame.draw.circle(screen, WHITE, dp_position, scale_converter(body.radius, SCALE_FACTOR))
             pygame.draw.polygon(screen, ORANGE, [dp_position, [dp_position[0]+5, dp_position[1]-10], [dp_position[0]-5, dp_position[1]-10]])
         
         #draw craft
-        craft_dp_xpos = DP_CENTER_X + scale_converter(starship.xpos, SCALE_FACTOR)
-        craft_dp_ypos = DP_CENTER_Y + scale_converter(starship.ypos, SCALE_FACTOR)
-        #pygame.draw.polygon(screen, RED, [craft_dp_position, [craft_dp_position[0]+5, craft_dp_position[1]-10], [craft_dp_position[0]-5, craft_dp_position[1]-10]])
-        starship.drawCraft(screen, craft_dp_xpos, craft_dp_ypos, SCALE_FACTOR)
-
+        craft_dp_pos = (DP_CENTER_X + scale_converter(starship.xpos, SCALE_FACTOR), DP_CENTER_Y + scale_converter(starship.ypos, SCALE_FACTOR))
+        starship.drawCraft(screen, craft_dp_pos[0], craft_dp_pos[1], SCALE_FACTOR)
+        #craft triangle marker
+        pygame.draw.polygon(screen, RED, (craft_dp_pos, (craft_dp_pos[0]+5, craft_dp_pos[1]-10), (craft_dp_pos[0]-5, craft_dp_pos[1]-10)))
+        
         pygame.display.set_caption(str(i))
         pygame.display.update()
         time.sleep(iteration_pause)

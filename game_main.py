@@ -42,17 +42,28 @@ class Mass:
         return self.name
     
     def gravitational_influence(self, time_interval):
-        deltax = self.xpos - self.parent_body.xpos
-        deltay = self.ypos - self.parent_body.ypos
-        distance = math.sqrt((deltax**2) + (deltay**2))
+        #vectors reffered in [magnitude, angle] pairs
+        #all angles drawn from the mass
+        gravity_vectors = []
 
-        #force of gravity calculated using Newton's Law of Gravition (G defined globally above)
-        force_gravity = ((G*self.mass*self.parent_body.mass) / (1000*distance)**2) / 1000
-        #angles drawn from the space craft
-        theta = math.atan2(deltay, deltax)
+        for body in body_list:
+            if body == self:
+                continue
+            deltax = self.xpos - body.xpos
+            deltay = self.ypos - body.ypos
+            distance = math.sqrt((deltax**2) + (deltay**2))
 
-        net_xforce = force_gravity * -math.cos(theta)
-        net_yforce = force_gravity * -math.sin(theta)
+            #force of gravity calculated using Newton's Law of Gravition (G defined globally above)
+            force_gravity = ((G*self.mass*body.mass) / (1000*distance)**2) / 1000
+            theta = math.atan2(deltay, deltax)
+
+            gravity_vectors.append((force_gravity, theta))
+
+        net_xforce, net_yforce = 0, 0
+        for vector in gravity_vectors:
+            
+            net_xforce += vector[0] * -math.cos(vector[1])
+            net_yforce += vector[0] * -math.sin(vector[1])
 
         net_xaccel = net_xforce / self.mass
         net_yaccel = net_yforce / self.mass
@@ -83,6 +94,7 @@ class SpaceCraft:
         self.xvelo = orbital_velo*math.cos(self.true_anomaly+math.pi/2)
         self.yvelo = orbital_velo*math.sin(self.true_anomaly+math.pi/2)
         self.xpos, self.ypos = 0, 0
+        self.fuel_remaining = 1000
 
 
     def __repr__(self):
@@ -122,8 +134,61 @@ class SpaceCraft:
         self.xpos += self.xvelo * time_interval
         self.ypos += self.yvelo * time_interval
 
-    def craftThrust(self):
-        pass
+
+    def craftThrust(self, direction):
+        #forward/prograde: 1    backwards/retrograde: -1
+        if self.fuel_remaining > 0:
+            craft_velo = math.sqrt(self.xvelo**2 + self.yvelo**2)
+            craft_direction = math.atan2(self.yvelo, self.xvelo)
+
+            self.xvelo += (direction*0.01*craft_velo)*math.cos(craft_direction)
+            self.yvelo += (direction*0.01*craft_velo)*math.sin(craft_direction)
+
+            self.fuel_remaining -= 1
+        else:
+            print("no fuel remaining!!!")
+
+
+    def drawLead(self, lead_length, time_step):
+        lead_positions = [(self.xpos, self.ypos)]
+        lead_xvelo = self.xvelo
+        lead_yvelo = self.yvelo
+        new_xpos, new_ypos = self.xpos, self.ypos
+
+        for i in range(0, lead_length):
+                           
+            gravity_vectors = []
+            for body in body_list:
+                deltax = lead_positions[i][0] - body.xpos
+                deltay = lead_positions[i][1] - body.ypos
+                distance = math.sqrt((deltax**2) + (deltay**2))
+
+                #force of gravity calculated using Newton's Law of Gravition (G defined globally above)
+                force_gravity = ((G*self.mass*body.mass) / (1000*distance)**2) / 1000
+                theta = math.atan2(deltay, deltax)
+
+                gravity_vectors.append((force_gravity, theta))
+
+            net_xforce, net_yforce = 0, 0
+            for vector in gravity_vectors:
+                
+                net_xforce += vector[0] * -math.cos(vector[1])
+                net_yforce += vector[0] * -math.sin(vector[1])
+
+            net_xaccel = net_xforce / self.mass
+            net_yaccel = net_yforce / self.mass
+
+            #calculates the change in velocity over a given time step interval
+            lead_xvelo += net_xaccel * time_step
+            lead_yvelo += net_yaccel * time_step
+
+            new_xpos += lead_xvelo * time_step
+            new_ypos += lead_yvelo * time_step
+
+            lead_positions.append((new_xpos, new_ypos))
+        
+        return lead_positions
+        
 
     def drawCraft(self, screen, xpos, ypos, SCALE_FACTOR):
         ### input display x-y positions along with a scale factor
@@ -167,6 +232,7 @@ class SpaceCraft:
         pygame.draw.polygon(screen, RED, right_tail_points)
         pygame.draw.polygon(screen, RED, left_tail_points)
         pygame.draw.polygon(screen, GREY, tank_points)
+        #pygame.draw.line(screen, ORANGE, (xpos, ypos), (xpos+tank_length*10*math.cos(nose_direction), ypos+tank_length*10*math.sin(nose_direction)))
         
 
 def scale_converter(real_distance, SCALE_FACTOR):
@@ -177,13 +243,18 @@ def scale_converter(real_distance, SCALE_FACTOR):
 
 #initialize relative center of the simulation and any planets/moons below it
 #Planetary Mass: name, mass, radius, parent_planet, orbital_radius
-earth = Mass("Earth", 5.97*(10**24), 6378, None, 149.6*(10**6))
+#sun = Mass("Sun", 1988500*(10**24), 20000, None, 0)
+#mercury = Mass("Mercury", 0.330*(10**24), 2439, sun, 57.9*(10**5))
+#venus = Mass("Venus", 4.87*(10**24), 6052, sun, 108.2*(10**5))
+earth = Mass("Earth", 5.97*(10**24), 6378, None, 149.6*(10**4))
+moon = Mass("Moon", 0.073*(10**24), 1737, earth, 0.384*(10**5))
 
-body_list = [earth]#, sun)
+
+body_list = [earth, moon]
 
 #SpaceCraft: name, mass, length, initial_parent, orbital_radius, true_anomaly=0, orbital_velo=None
 #if no value inputed for initial velocity, it will assume a circular orbit
-starship = SpaceCraft("starship", 10, 3, earth, 7878, 0, -11)
+starship = SpaceCraft("starship", 10, 3, earth, 7878, 0)
 
 
 
@@ -261,11 +332,20 @@ def main(screen_width, screen_height, simulation_width, time_step, iteration_pau
                         TARGET = target_list[target_list.index(TARGET)-1]   
                 #change the simulation speed
                 if event.key == pygame.K_z:
-                    if step_options.index(time_step)+1 != len(step_options):
-                        time_step = step_options[step_options.index(time_step)+1]
+                    time_step = time_step * 10
+                    #if step_options.index(time_step)+1 != len(step_options):
+                    #    time_step = step_options[step_options.index(time_step)+1]
                 if event.key == pygame.K_x:
-                    if step_options.index(time_step) > 0:
-                        time_step = step_options[step_options.index(time_step)-1]
+                    time_step = time_step / 10
+                    #if step_options.index(time_step) > 0:
+                    #    time_step = step_options[step_options.index(time_step)-1]
+
+                if event.key == pygame.K_w:
+                    starship.craftThrust(1)
+                if event.key == pygame.K_s:
+                    starship.craftThrust(-1)
+
+                #pygame.draw.polygon(screen, GREEN, ((10,10), (10, 30), (starship.fuel_remaining/10+10, 10), (starship.fuel_remaining/10+10, 30)))
                            
         #calculate gravity's influence on each orbiting body
         for body in body_list:
@@ -284,14 +364,24 @@ def main(screen_width, screen_height, simulation_width, time_step, iteration_pau
         for body in body_list:
             dp_position = (DP_CENTER_X + scale_converter(body.xpos, SCALE_FACTOR), DP_CENTER_Y + scale_converter(body.ypos, SCALE_FACTOR))
             #draw.circle(surface, color, center, radius)
-            pygame.draw.circle(screen, WHITE, dp_position, scale_converter(body.radius, SCALE_FACTOR))
-            pygame.draw.polygon(screen, ORANGE, [dp_position, [dp_position[0]+5, dp_position[1]-10], [dp_position[0]-5, dp_position[1]-10]])
+            if body == relative_center:
+                pygame.draw.circle(screen, ORANGE, dp_position, scale_converter(body.radius, SCALE_FACTOR))
+                pygame.draw.polygon(screen, RED, [dp_position, [dp_position[0]+5, dp_position[1]-10], [dp_position[0]-5, dp_position[1]-10]])
+            else:
+                pygame.draw.circle(screen, WHITE, dp_position, scale_converter(body.radius, SCALE_FACTOR))
+                pygame.draw.polygon(screen, ORANGE, [dp_position, [dp_position[0]+5, dp_position[1]-10], [dp_position[0]-5, dp_position[1]-10]])
         
         #draw craft
         craft_dp_pos = (DP_CENTER_X + scale_converter(starship.xpos, SCALE_FACTOR), DP_CENTER_Y + scale_converter(starship.ypos, SCALE_FACTOR))
         starship.drawCraft(screen, craft_dp_pos[0], craft_dp_pos[1], SCALE_FACTOR)
+
+        lead_positions = starship.drawLead(1000, time_step)
+        for coord in lead_positions:
+            dp_pos = (DP_CENTER_X + scale_converter(coord[0], SCALE_FACTOR), DP_CENTER_Y + scale_converter(coord[1], SCALE_FACTOR))
+            pygame.draw.circle(screen, BLUE, dp_pos, 1)
+
         #craft triangle marker
-        pygame.draw.polygon(screen, RED, (craft_dp_pos, (craft_dp_pos[0]+5, craft_dp_pos[1]-10), (craft_dp_pos[0]-5, craft_dp_pos[1]-10)))
+        pygame.draw.polygon(screen, GREEN, (craft_dp_pos, (craft_dp_pos[0]+5, craft_dp_pos[1]-10), (craft_dp_pos[0]-5, craft_dp_pos[1]-10)))
         
         pygame.display.set_caption(str(i))
         pygame.display.update()

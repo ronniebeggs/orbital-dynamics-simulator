@@ -174,12 +174,20 @@ def scale_converter(real_distance, SCALE_FACTOR):
 
 
 
+
+
+
+
+
+
+
+
 #initialize relative center of the simulation and any planets/moons below it
 #Planetary Mass: name, mass, radius, parent_planet, orbital_radius
 #sun = Mass("Sun", 1988500*(10**24), 20000, None, 0)
 #mercury = Mass("Mercury", 0.330*(10**24), 2439, sun, 57.9*(10**5))
 #venus = Mass("Venus", 4.87*(10**24), 6052, sun, 108.2*(10**5))
-earth = Mass("Earth", 5.97*(10**24), 6378, None, 0)
+earth = Mass("Earth", 5.97*(10**24), 6378, None, 149.6*(10**6))
 moon = Mass("Moon", 0.073*(10**24), 1737, earth, 0.384*(10**6))
 
 
@@ -191,13 +199,17 @@ craft = SpaceCraft("craft", 10, 3, earth, 7878, 0)
 
 
 #parameters: display dimensions, simulation width included in the display window, iteration pause interval
-def main(screen_width, screen_height, simulation_width, time_step, iteration_pause, lead_length):
+def main(screen_width, screen_height, simulation_width, physics_fps, lead_length):
 
     #display infomation and dimensions
     DP_WIDTH, DP_HEIGHT = screen_width, screen_height    
     REAL_WIDTH = simulation_width #raw width of the display in km
     SCALE_FACTOR = round(REAL_WIDTH / DP_WIDTH) #ratio of km:1 pixel
     TARGET = craft #either a class object or x-y coordinates
+    
+    multiplier_options = (1, 10, 100, 1000, 10000)
+    time_multiplier = multiplier_options[0]
+    time_step = time_multiplier / physics_fps
 
     #craft will always have the -1 index
     body_list = []
@@ -236,6 +248,7 @@ def main(screen_width, screen_height, simulation_width, time_step, iteration_pau
 
     #boolean determining whether to recalculate the lead
     recalculate_lead = True
+    multiplier_change = 0
 
     #initializes pygame library tools and display window
     pygame.init()
@@ -246,6 +259,7 @@ def main(screen_width, screen_height, simulation_width, time_step, iteration_pau
     running = True
     while running:
         start = time.time()
+        # input_start = time.time()
         counter += 1
 
         #pygame.event list keeps track of all keypress/mouseclicks that occur
@@ -257,7 +271,7 @@ def main(screen_width, screen_height, simulation_width, time_step, iteration_pau
 
             if event.type == pygame.KEYDOWN:
                 
-                #zoom in or out using up and down keys, respectively
+                #zoom in or out using the 1 and 2 number keys, respectively
                 if event.key == pygame.K_1:
                     SCALE_FACTOR = round(0.5 * SCALE_FACTOR, 5)
                 if event.key == pygame.K_2:
@@ -272,16 +286,23 @@ def main(screen_width, screen_height, simulation_width, time_step, iteration_pau
                     if body_list.index(TARGET)+1 == len(body_list):
                         TARGET = body_list[0]
                     else:
-                        TARGET = body_list[body_list.index(TARGET)-1]   
+                        TARGET = body_list[body_list.index(TARGET)-1]
+
                 #change the simulation speed
                 if event.key == pygame.K_z:
-                    time_step = time_step * 10
-                    #if step_options.index(time_step)+1 != len(step_options):
-                    #    time_step = step_options[step_options.index(time_step)+1]
+                    if multiplier_options.index(time_multiplier)+1 != len(multiplier_options):
+                        old_multiplier = time_multiplier
+                        time_multiplier = multiplier_options[multiplier_options.index(time_multiplier)+1]
+                        time_step = time_multiplier / physics_fps
+                        
+                        multiplier_change = round(time_multiplier / old_multiplier)
+                        adjustment_left = round(lead_length / multiplier_change)
+
                 if event.key == pygame.K_x:
-                    time_step = time_step / 10
-                    #if step_options.index(time_step) > 0:
-                    #    time_step = step_options[step_options.index(time_step)-1]
+                    if multiplier_options.index(time_multiplier) > 0:
+                        time_multiplier = multiplier_options[multiplier_options.index(time_multiplier)-1]
+                        time_step = time_multiplier / physics_fps
+                
 
                 # if event.key == pygame.K_w or event.key == pygame.K_s:
                 #     thrust_change = True
@@ -302,8 +323,10 @@ def main(screen_width, screen_height, simulation_width, time_step, iteration_pau
                 #         print("no fuel remaining!!!")
                 # else:
                 #     thrust_x, thrust_y = 0, 0
+        
+        # input_stop = time.time()
+        # grav_start = time.time()
 
-                             
         #creates a list of future planet/craft positions
         if recalculate_lead == True:
 
@@ -320,7 +343,23 @@ def main(screen_width, screen_height, simulation_width, time_step, iteration_pau
 
                 craft.craftGravity(planet_list, time_step, i)
 
+        elif multiplier_change != 0:
+            
+            for i in range(multiplier_change):
+
+                for planet in planet_list:
+
+                    if planet == relative_center:
+                        planet.lead_positions.append((0, 0))
+                        planet.lead_velocities.append((0, 0))
+                        continue
+
+                    planet.planetGravity(time_step, -1)
+
+                craft.craftGravity(planet_list, time_step, -1)
+            
         else:
+
             for planet in planet_list:
 
                 if planet == relative_center:
@@ -336,6 +375,9 @@ def main(screen_width, screen_height, simulation_width, time_step, iteration_pau
         for body in body_list:
             body.xpos, body.ypos = body.lead_positions[0][0], body.lead_positions[0][1]
             body.xvelo, body.yvelo = body.lead_velocities[0][0], body.lead_velocities[0][1]
+
+        # grav_stop = time.time()
+        # dp_start = time.time()
 
         DP_CENTER_X = DP_WIDTH/2 + (-1 * scale_converter(TARGET.xpos, SCALE_FACTOR))
         DP_CENTER_Y = DP_HEIGHT/2 + (-1 * scale_converter(TARGET.ypos, SCALE_FACTOR))
@@ -357,17 +399,43 @@ def main(screen_width, screen_height, simulation_width, time_step, iteration_pau
         #craft triangle marker
         pygame.draw.polygon(screen, GREEN, (craft_dp_pos, (craft_dp_pos[0]+5, craft_dp_pos[1]-10), (craft_dp_pos[0]-5, craft_dp_pos[1]-10)))
 
-        for body in body_list:
-            body.lead_positions.pop(0)
-            body.lead_velocities.pop(0)
-        
+        if multiplier_change != 0:
+            for i in range(multiplier_change):
+                for body in body_list:
+                    body.lead_positions.pop(0)
+                    body.lead_velocities.pop(0)
+
+            adjustment_left -= 1
+            if adjustment_left <= 0:
+                multiplier_change = 0
+
+        else:
+            for body in body_list:
+                body.lead_positions.pop(0)
+                body.lead_velocities.pop(0)
+
         recalculate_lead = False
-        
+
         pygame.display.set_caption(str(counter))
         pygame.display.update()
+
         finish = time.time()
-        #print(finish-start)
+        # dp_stop = time.time()
+
+        iteration_length = finish - start
+
+        # print(f"""
+        # Input: {input_stop-input_start}
+        # Grav: {grav_stop-grav_start}
+        # Display: {dp_stop-dp_start}
+        # total: {iteration_length}
+
+        # """)
+
+        iteration_pause = (1/physics_fps) - iteration_length
+        if iteration_pause < 0:
+            iteration_pause = 0
         time.sleep(iteration_pause)
 
-#parameters: real width included in the display window, iteration pause interval
-main(1000, 1000, 1000000, 0.01, 0.001, 500)
+#parameters: screen_width, screen_height, simulation_width, physics_fps, dp_fps, lead_length
+main(1000, 1000, 1000000, 240, 500)

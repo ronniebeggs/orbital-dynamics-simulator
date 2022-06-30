@@ -122,6 +122,16 @@ class SpaceCraft:
         #determines the change in position over the same time step interval
         xpos = self.lead_positions[i][0] + (xvelo * lead_step)
         ypos = self.lead_positions[i][1] + (yvelo * lead_step)
+
+        # if self.parent != None:
+        #     deltax = craft.lead_positions[i][0] - craft.parent.lead_positions[i][0]
+        #     deltay = craft.lead_positions[i][1] - craft.parent.lead_positions[i][1]
+        #     distance = math.sqrt((deltax**2) + (deltay**2))
+        #     theta = math.atan2(deltay, deltax)
+            
+        #     adj_xpos = craft.parent.xpos + distance*math.cos(theta)
+        #     adj_ypos = craft.parent.ypos + distance*math.sin(theta)
+
         self.lead_positions.append((xpos, ypos))
 
 
@@ -177,11 +187,18 @@ def scale_converter(real_distance, SCALE_FACTOR):
     return round(scaled_distance)
 
 
+
+
+
+
+
+
+
 ### CLASS INITIALIZATION:
 
 #Planetary Mass: name, mass, radius, parent_planet, orbital_radius
 # initialize planets in a decreasing hierarchical order
-# sun = Planet("Sun", 1988500*(10**24), 20000, ORANGE, None, 0)
+#sun = Planet("Sun", 1988500*(10**24), 20000, ORANGE, None, 0)
 # mercury = Planet("Mercury", 0.330*(10**24), 2439, sun, 57.9*(10**5))
 # venus = Planet("Venus", 4.87*(10**24), 6052, sun, 108.2*(10**5))
 earth = Planet("Earth", 5.97*(10**24), 6378, BLUE, None, 149.6*(10**6))
@@ -191,7 +208,13 @@ planet_list = [earth, moon]
 
 #SpaceCraft: name, mass, length, initial_parent, orbital_radius, true_anomaly=0, orbital_velo=None
 #if no value inputed for initial velocity, it will assume a circular orbit
-craft = SpaceCraft("Craft", 10, 3, earth, 7878, 0.62*math.pi)
+craft = SpaceCraft("Craft", 10, 3, moon, 7878, 0.62*math.pi)
+
+
+
+
+
+
 
 
 #parameters: display dimensions, simulation width included in the display window, iteration pause interval
@@ -242,6 +265,7 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
         body.lead_positions = [(body.xpos, body.ypos)]
         body.lead_velocities = [(body.xvelo, body.yvelo)]
 
+    strongest_influence = craft.parent
 
     #initializes pygame library tools and display window
     pygame.init()
@@ -364,7 +388,7 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
             #the craft's parent is whichever planet exerts the greatest force of gravity upon the craft
             if vector[0] > largest_vector[0]:
                 largest_vector = vector
-                craft.parent = planet_list[gravity_vectors.index(vector)]
+                strongest_influence = planet_list[gravity_vectors.index(vector)]
             
             net_xforce += vector[0] * -math.cos(vector[1])
             net_yforce += vector[0] * -math.sin(vector[1])
@@ -380,6 +404,20 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
         craft.xpos += (craft.xvelo * time_step)
         craft.ypos += (craft.yvelo * time_step)
 
+        relative_velocity = math.sqrt((craft.xvelo - strongest_influence.xvelo)**2 + (craft.yvelo - strongest_influence.yvelo)**2)
+        distance_between = math.sqrt((craft.xpos - strongest_influence.xpos)**2 + (craft.ypos - strongest_influence.ypos)**2)
+        escape_velocity = math.sqrt(2*G*strongest_influence.mass/(distance_between*1000)) / 1000 
+        
+        if relative_velocity >= escape_velocity:
+            craft.parent = None
+            recalculate_lead = True
+
+        if relative_velocity < escape_velocity and craft.parent == None:
+            craft.parent = strongest_influence
+            recalculate_lead = True
+
+        print(relative_velocity, escape_velocity)
+        print(craft.parent, strongest_influence)
 
         #LEAD CALCULATIONS
         if recalculate_lead == True:
@@ -487,8 +525,25 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
 
         #draw the craft's future path using the lead positions
         for i in range(len(craft.lead_positions)):
-            dp_pos = (DP_CENTER_X + scale_converter(craft.lead_positions[i][0], SCALE_FACTOR), DP_CENTER_Y + scale_converter(craft.lead_positions[i][1], SCALE_FACTOR))
-            pygame.draw.circle(screen, craft.parent.color, dp_pos, 1)
+            #craft is orbiting around a planet, so their future path relative to the planet is shown
+            if craft.parent != None:
+                deltax = craft.lead_positions[i][0] - craft.parent.lead_positions[i][0]
+                deltay = craft.lead_positions[i][1] - craft.parent.lead_positions[i][1]
+                distance = math.sqrt((deltax**2) + (deltay**2))
+                theta = math.atan2(deltay, deltax)
+                
+                adj_xpos = craft.parent.xpos + distance*math.cos(theta)
+                adj_ypos = craft.parent.ypos + distance*math.sin(theta)
+                lead_color = craft.parent.color
+            #craft is currently between planets and their absolute position is displayed
+            else:
+                adj_xpos = craft.lead_positions[i][0]
+                adj_ypos = craft.lead_positions[i][1]
+                lead_color = GREY
+
+            dp_xpos = DP_CENTER_X + scale_converter(adj_xpos, SCALE_FACTOR)
+            dp_ypos = DP_CENTER_Y + scale_converter(adj_ypos, SCALE_FACTOR)
+            pygame.draw.circle(screen, lead_color, (dp_xpos, dp_ypos), 1)
         #craft triangle marker
         pygame.draw.polygon(screen, GREEN, (craft_dp_pos, (craft_dp_pos[0]+5, craft_dp_pos[1]-10), (craft_dp_pos[0]-5, craft_dp_pos[1]-10)))
         
@@ -543,6 +598,5 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
             iteration_pause = 0
         time.sleep(iteration_pause)
 
-#parameters: screen_width, s
 # screen_height, simulation_width, physics_fps, dp_fps, lead_length
 main(1000, 1000, 1000000, 240, 1000)

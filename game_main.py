@@ -186,6 +186,29 @@ def scale_converter(real_distance, SCALE_FACTOR):
     scaled_distance = real_distance / SCALE_FACTOR
     return round(scaled_distance)
 
+def fuel_bar(screen, fuel_remaining):
+    outline_points = ((10, 10), (120, 10), (120, 30), (10, 30))
+    for i, e in enumerate(outline_points):
+        if e != outline_points[-1]:
+            pygame.draw.line(screen, WHITE, e, outline_points[i+1], 1)
+        else:
+            pygame.draw.line(screen, WHITE, e, outline_points[0], 1)
+
+    if fuel_remaining <= 0:
+        bar_length = 100
+        bar_color = RED
+    else:
+        bar_length = round(fuel_remaining / 1000, 2) * 100
+        bar_color = GREEN
+    bar_points = ((15, 15), (bar_length+15, 15), (bar_length+15, 25), (15, 25))
+    pygame.draw.polygon(screen, bar_color, bar_points)
+        
+def time_warp_bar(screen, multiplier_options, time_multiplier):
+    for i, e in enumerate(multiplier_options):
+        pygame.draw.circle(screen, GREEN, (140+i*20, 20), 5)
+        if e == time_multiplier:
+            break
+
 
 
 
@@ -202,13 +225,13 @@ def scale_converter(real_distance, SCALE_FACTOR):
 # mercury = Planet("Mercury", 0.330*(10**24), 2439, sun, 57.9*(10**5))
 # venus = Planet("Venus", 4.87*(10**24), 6052, sun, 108.2*(10**5))
 earth = Planet("Earth", 5.97*(10**24), 6378, BLUE, None, 149.6*(10**6))
-moon = Planet("Moon", 0.73*(10**24), 1737, WHITE, earth, 0.384*(10**6))
+moon = Planet("Moon", 0.73*(10**24), 1737, WHITE, earth, 0.384*(10**6)/2)
 
 planet_list = [earth, moon]
 
 #SpaceCraft: name, mass, length, initial_parent, orbital_radius, true_anomaly=0, orbital_velo=None
 #if no value inputed for initial velocity, it will assume a circular orbit
-craft = SpaceCraft("Craft", 10, 3, moon, 7878, 0.62*math.pi)
+craft = SpaceCraft("Craft", 10, 3, earth, 7878, 0.62*math.pi, -12)
 
 
 
@@ -266,6 +289,7 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
         body.lead_velocities = [(body.xvelo, body.yvelo)]
 
     strongest_influence = craft.parent
+    thrust_x, thrust_y = 0, 0
 
     #initializes pygame library tools and display window
     pygame.init()
@@ -279,7 +303,6 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
         start = time.time()
         # input_start = time.time()
         counter += 1
-
         #INPUT CALCULATIONS
         #pygame.event list keeps track of all keypress/mouseclicks that occur
         for event in pygame.event.get():
@@ -319,27 +342,30 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
                         time_multiplier = multiplier_options[multiplier_options.index(time_multiplier)-1]
                         time_step = time_multiplier / physics_fps
                         lead_factor = lead_step / time_step
-                      
-            
-                # if event.key == pygame.K_w or event.key == pygame.K_s:
-                #     thrust_change = True
-                #     #forward/prograde: 1    backwards/retrograde: -1
-                #     if event.key == pygame.K_w:
-                #         direction = 1
-                #     else:
-                #         direction = -1
-                #     if craft.fuel_remaining > 0:
-                #         craft_velo = math.sqrt(craft.xvelo**2 + craft.yvelo**2)
-                #         craft_direction = math.atan2(craft.yvelo, craft.xvelo)
+                    
+        pressed_keys = pygame.key.get_pressed()
+        if pressed_keys[pygame.K_w]:
+            #forward/prograde: 1
+            direction = 1
+        elif pressed_keys[pygame.K_s]:
+            #backwards/retrograde: -1
+            direction = -1
+        else:
+            direction = 0
+        if direction != 0:
+            if craft.fuel_remaining > 0:
+                craft_velo = math.sqrt(craft.xvelo**2 + craft.yvelo**2)
+                craft_direction = math.atan2(craft.yvelo, craft.xvelo)
 
-                #         thrust_x = (direction*0.01*craft_velo)*math.cos(craft_direction)
-                #         thrust_y = (direction*0.01*craft_velo)*math.sin(craft_direction)
+                thrust_x = (direction*0.001*craft_velo)*math.cos(craft_direction)
+                thrust_y = (direction*0.001*craft_velo)*math.sin(craft_direction)
 
-                #         craft.fuel_remaining -= 1
-                #     else:
-                #         print("no fuel remaining!!!")
-                # else:
-                #     thrust_x, thrust_y = 0, 0
+                craft.fuel_remaining -= 1
+                recalculate_lead = True
+            else:
+                thrust_x, thrust_y = 0, 0
+        else:
+            thrust_x, thrust_y = 0, 0
         
         # input_stop = time.time()
         # grav_start = time.time()
@@ -370,6 +396,7 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
             planet.xpos += planet.xvelo * time_step
             planet.ypos += planet.yvelo * time_step
             
+
         #craft Gravity Calcs
         gravity_vectors = []
         for planet in planet_list:
@@ -397,8 +424,9 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
         net_yaccel = net_yforce / craft.mass
 
         ##calculates the change in velocity over a given time step interval
-        craft.xvelo += (net_xaccel * time_step) # + thrust
-        craft.yvelo += (net_yaccel * time_step)
+        craft.xvelo += (net_xaccel * time_step) + thrust_x
+        craft.yvelo += (net_yaccel * time_step) + thrust_y
+        thrust_x, thrust_y = 0, 0
 
         #determines the change in position over the same time step interval
         craft.xpos += (craft.xvelo * time_step)
@@ -415,9 +443,6 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
         if relative_velocity < escape_velocity and craft.parent == None:
             craft.parent = strongest_influence
             recalculate_lead = True
-
-        print(relative_velocity, escape_velocity)
-        print(craft.parent, strongest_influence)
 
         #LEAD CALCULATIONS
         if recalculate_lead == True:
@@ -577,6 +602,8 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
         else:
             recalculate_lead = False
 
+        fuel_bar(screen, craft.fuel_remaining)
+        time_warp_bar(screen, multiplier_options, time_multiplier)
         pygame.display.set_caption(str(counter))
         pygame.display.update()
         

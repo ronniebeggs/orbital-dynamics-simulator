@@ -80,11 +80,13 @@ class SpaceCraft:
 
         self.xpos, self.ypos = None, None
         self.xvelo, self.yvelo = None, None
+        self.rel_xvelo, self.rel_yvelo = None, None
 
         self.lead_positions = []
+        self.adj_lead = []
         self.lead_velocities = []
 
-        self.fuel_remaining = 1000 
+        self.fuel_remaining = 3000 
 
     def __repr__(self):
         return self.name
@@ -123,17 +125,7 @@ class SpaceCraft:
         xpos = self.lead_positions[i][0] + (xvelo * lead_step)
         ypos = self.lead_positions[i][1] + (yvelo * lead_step)
 
-        # if self.parent != None:
-        #     deltax = craft.lead_positions[i][0] - craft.parent.lead_positions[i][0]
-        #     deltay = craft.lead_positions[i][1] - craft.parent.lead_positions[i][1]
-        #     distance = math.sqrt((deltax**2) + (deltay**2))
-        #     theta = math.atan2(deltay, deltax)
-            
-        #     adj_xpos = craft.parent.xpos + distance*math.cos(theta)
-        #     adj_ypos = craft.parent.ypos + distance*math.sin(theta)
-
         self.lead_positions.append((xpos, ypos))
-
 
     def drawCraft(self, screen, dp_position, SCALE_FACTOR):
         #calculates the display dimensions of the craft given its total length
@@ -198,7 +190,7 @@ def fuel_bar(screen, fuel_remaining):
         bar_length = 100
         bar_color = RED
     else:
-        bar_length = round(fuel_remaining / 1000, 2) * 100
+        bar_length = round(fuel_remaining / 3000, 2) * 100
         bar_color = GREEN
     bar_points = ((15, 15), (bar_length+15, 15), (bar_length+15, 25), (15, 25))
     pygame.draw.polygon(screen, bar_color, bar_points)
@@ -208,6 +200,9 @@ def time_warp_bar(screen, multiplier_options, time_multiplier):
         pygame.draw.circle(screen, GREEN, (140+i*20, 20), 5)
         if e == time_multiplier:
             break
+
+
+    
 
 
 
@@ -226,12 +221,14 @@ def time_warp_bar(screen, multiplier_options, time_multiplier):
 # venus = Planet("Venus", 4.87*(10**24), 6052, sun, 108.2*(10**5))
 earth = Planet("Earth", 5.97*(10**24), 6378, BLUE, None, 149.6*(10**6))
 moon = Planet("Moon", 0.73*(10**24), 1737, WHITE, earth, 0.384*(10**6)/2)
+duna = Planet("Duna", 0.5*(10**24), 2737, ORANGE, earth, 0.384*(10**6))
 
-planet_list = [earth, moon]
+
+planet_list = [earth, moon, duna]
 
 #SpaceCraft: name, mass, length, initial_parent, orbital_radius, true_anomaly=0, orbital_velo=None
 #if no value inputed for initial velocity, it will assume a circular orbit
-craft = SpaceCraft("Craft", 10, 3, earth, 7878, 0.62*math.pi, -12)
+craft = SpaceCraft("Craft", 10, 3, earth, 7878, 0.62*math.pi)#, -12)
 
 
 
@@ -252,6 +249,7 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
     time_step = time_multiplier / physics_fps
     lead_factor = 10000 #ratio of the lead step to the simulations time step
     lead_step = time_step * lead_factor
+    thrust_x, thrust_y = 0, 0
 
     #list of all entities in the simulation
     body_list = []
@@ -287,9 +285,6 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
     for body in body_list:
         body.lead_positions = [(body.xpos, body.ypos)]
         body.lead_velocities = [(body.xvelo, body.yvelo)]
-
-    strongest_influence = craft.parent
-    thrust_x, thrust_y = 0, 0
 
     #initializes pygame library tools and display window
     pygame.init()
@@ -411,14 +406,15 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
         net_xforce, net_yforce = 0, 0
         largest_vector = gravity_vectors[0]
         for vector in gravity_vectors:
+                        
+            net_xforce += vector[0] * -math.cos(vector[1])
+            net_yforce += vector[0] * -math.sin(vector[1])
             
             #the craft's parent is whichever planet exerts the greatest force of gravity upon the craft
             if vector[0] > largest_vector[0]:
                 largest_vector = vector
-                strongest_influence = planet_list[gravity_vectors.index(vector)]
-            
-            net_xforce += vector[0] * -math.cos(vector[1])
-            net_yforce += vector[0] * -math.sin(vector[1])
+
+        strongest_influence = planet_list[gravity_vectors.index(largest_vector)]
 
         net_xaccel = net_xforce / craft.mass
         net_yaccel = net_yforce / craft.mass
@@ -443,10 +439,10 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
         if relative_velocity < escape_velocity and craft.parent == None:
             craft.parent = strongest_influence
             recalculate_lead = True
-
+        
         #LEAD CALCULATIONS
         if recalculate_lead == True:
-            #wipes the current lead lists by overwriting them
+            #wipes the current lead list by overwriting it
             if len(craft.lead_positions) > 1:
                 for body in body_list:
                     body.lead_positions = [(body.xpos, body.ypos)] 
@@ -464,11 +460,24 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
                     planet.planetLead(lead_step, i)
 
                 craft.craftLead(planet_list, lead_step, i)
-                
+
+                if craft.parent != None:
+                    deltax = craft.lead_positions[i][0] - craft.parent.lead_positions[i][0]
+                    deltay = craft.lead_positions[i][1] - craft.parent.lead_positions[i][1]
+                    distance = math.sqrt((deltax**2) + (deltay**2))
+                    theta = math.atan2(deltay, deltax)
+                    
+                    adj_xpos = craft.parent.xpos + distance*math.cos(theta)
+                    adj_ypos = craft.parent.ypos + distance*math.sin(theta)
+
+                    craft.adj_lead.append((adj_xpos, adj_ypos))
+                else:
+                    craft.adj_lead.append((craft.lead_positions[i][0], craft.lead_positions[i][1]))
+
                 #the distance between the newest lead position and the current position of the craft are calculated
                 #if repetition is calculated, future calculations will cease
-                deltax = craft.lead_positions[-1][0] - craft.xpos
-                deltay = craft.lead_positions[-1][1] - craft.ypos
+                deltax = craft.adj_lead[-1][0] - craft.xpos
+                deltay = craft.adj_lead[-1][1] - craft.ypos
                 distance = math.sqrt((deltax**2) + (deltay**2))
                  
                 if distance > 500 and outside_radius == False:
@@ -604,13 +613,15 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
 
         fuel_bar(screen, craft.fuel_remaining)
         time_warp_bar(screen, multiplier_options, time_multiplier)
-        pygame.display.set_caption(str(counter))
-        pygame.display.update()
-        
+                
         # dp_stop = time.time()
         
         finish = time.time()
         iteration_length = finish - start
+
+        if counter % 10 and iteration_length > 0:
+            pygame.display.set_caption(str(round(1/iteration_length)))
+        pygame.display.update()
 
         # print(f"""
         # Input: {input_stop-input_start}

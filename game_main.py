@@ -83,7 +83,6 @@ class SpaceCraft:
         self.rel_xvelo, self.rel_yvelo = None, None
 
         self.lead_positions = []
-        self.adj_lead = []
         self.lead_velocities = []
 
         self.fuel_remaining = 3000 
@@ -136,7 +135,7 @@ class SpaceCraft:
         tail_diagonal = math.sqrt((tank_length)**2 + (2*tank_width)**2)
         
         #determines the direction of the craft based on its velocity
-        nose_direction = math.atan2(self.yvelo, self.xvelo)
+        nose_direction = math.atan2(craft.yvelo, craft.xvelo)
         nose_pos = (xpos + math.cos(nose_direction)*(tank_length*2), ypos + math.sin(nose_direction)*(tank_length*2))
 
         #p1-4: four edges of the tank in counterclockwise order starting from top right (when the craft is pointed up)
@@ -337,7 +336,7 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
                         time_multiplier = multiplier_options[multiplier_options.index(time_multiplier)-1]
                         time_step = time_multiplier / physics_fps
                         lead_factor = lead_step / time_step
-                    
+
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[pygame.K_w]:
             #forward/prograde: 1
@@ -466,25 +465,17 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
                     deltay = craft.lead_positions[i][1] - craft.parent.lead_positions[i][1]
                     distance = math.sqrt((deltax**2) + (deltay**2))
                     theta = math.atan2(deltay, deltax)
-                    
                     adj_xpos = craft.parent.xpos + distance*math.cos(theta)
                     adj_ypos = craft.parent.ypos + distance*math.sin(theta)
 
-                    craft.adj_lead.append((adj_xpos, adj_ypos))
-                else:
-                    craft.adj_lead.append((craft.lead_positions[i][0], craft.lead_positions[i][1]))
-
-                #the distance between the newest lead position and the current position of the craft are calculated
-                #if repetition is calculated, future calculations will cease
-                deltax = craft.adj_lead[-1][0] - craft.xpos
-                deltay = craft.adj_lead[-1][1] - craft.ypos
-                distance = math.sqrt((deltax**2) + (deltay**2))
-                 
-                if distance > 500 and outside_radius == False:
-                    outside_radius = True
-                if distance < 500 and outside_radius == True:
-                    break                    
-            
+                    #the distance between the newest lead position and the current position of the craft are calculated
+                    #if repetition is calculated, future calculations will cease
+                    distance = math.sqrt(((adj_xpos - craft.xpos)**2) + ((adj_ypos - craft.ypos)**2))
+                    if distance > 500 and outside_radius == False:
+                        outside_radius = True
+                    if distance < 500 and outside_radius == True:
+                        break
+                     
             #deletes the initial lead point as the craft passes by 
             for body in body_list:
                 body.lead_positions.pop(0)

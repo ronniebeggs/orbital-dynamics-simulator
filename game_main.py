@@ -13,6 +13,7 @@ RED = (255, 000, 000)
 BLUE = (000, 000, 255)
 GREEN = (000, 255, 000)
 ORANGE = (255, 165, 000)
+LAVENDER = (191, 148, 228)
 
 ### PLANET CLASS
 class Planet:
@@ -78,6 +79,7 @@ class SpaceCraft:
         self.orbital_velo = orbital_velo #initial tangential velocity -- if None, first cosmic velocity will be calculated later
         self.true_anomaly = true_anomaly #initial placement of the planet using polar coordinates
 
+        self.direction = None
         self.xpos, self.ypos = None, None
         self.xvelo, self.yvelo = None, None
         self.rel_xvelo, self.rel_yvelo = None, None
@@ -135,7 +137,7 @@ class SpaceCraft:
         tail_diagonal = math.sqrt((tank_length)**2 + (2*tank_width)**2)
         
         #determines the direction of the craft based on its velocity
-        nose_direction = math.atan2(craft.yvelo, craft.xvelo)
+        nose_direction = self.direction
         nose_pos = (xpos + math.cos(nose_direction)*(tank_length*2), ypos + math.sin(nose_direction)*(tank_length*2))
 
         #p1-4: four edges of the tank in counterclockwise order starting from top right (when the craft is pointed up)
@@ -218,16 +220,16 @@ def time_warp_bar(screen, multiplier_options, time_multiplier):
 #sun = Planet("Sun", 1988500*(10**24), 20000, ORANGE, None, 0)
 # mercury = Planet("Mercury", 0.330*(10**24), 2439, sun, 57.9*(10**5))
 # venus = Planet("Venus", 4.87*(10**24), 6052, sun, 108.2*(10**5))
-earth = Planet("Earth", 5.97*(10**24), 6378, BLUE, None, 149.6*(10**6))
-moon = Planet("Moon", 0.73*(10**24), 1737, WHITE, earth, 0.384*(10**6)/2)
-duna = Planet("Duna", 0.5*(10**24), 2737, ORANGE, earth, 0.384*(10**6))
+kerbin = Planet("Kerbin", 5.97*(10**24), 6378, BLUE, None, 149.6*(10**6))
+mun = Planet("Mun", 0.73*(10**24), 1737, GREY, kerbin, 0.384*(10**6)/2)
+duna = Planet("Duna", 0.5*(10**24), 2737, ORANGE, kerbin, 0.384*(10**6))
 
 
-planet_list = [earth, moon, duna]
+planet_list = [kerbin, mun, duna]
 
 #SpaceCraft: name, mass, length, initial_parent, orbital_radius, true_anomaly=0, orbital_velo=None
 #if no value inputed for initial velocity, it will assume a circular orbit
-craft = SpaceCraft("Craft", 10, 3, earth, 7878, 0.62*math.pi)#, -12)
+craft = SpaceCraft("Craft", 10, 3, mun, 7878, 0.62*math.pi)#, -12)
 
 
 
@@ -249,6 +251,7 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
     lead_factor = 10000 #ratio of the lead step to the simulations time step
     lead_step = time_step * lead_factor
     thrust_x, thrust_y = 0, 0
+    prograde = False
 
     #list of all entities in the simulation
     body_list = []
@@ -337,6 +340,23 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
                         time_step = time_multiplier / physics_fps
                         lead_factor = lead_step / time_step
 
+                if event.key == pygame.K_p and craft.parent != None:
+                    prograde = not(prograde)
+
+        if prograde:
+            theta = math.atan2(craft.ypos - craft.parent.ypos, craft.xpos - craft.parent.xpos)
+            rel_xvelo = craft.xvelo - craft.parent.xvelo
+            product = theta * rel_xvelo 
+            
+            if product < 0:
+                craft.direction = theta + (math.pi/2)
+            elif product > 0:
+                craft.direction = theta - (math.pi/2)
+            else:
+                continue
+        else:
+            craft.direction = math.atan2(craft.yvelo, craft.xvelo)
+
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[pygame.K_w]:
             #forward/prograde: 1
@@ -349,10 +369,9 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
         if direction != 0:
             if craft.fuel_remaining > 0:
                 craft_velo = math.sqrt(craft.xvelo**2 + craft.yvelo**2)
-                craft_direction = math.atan2(craft.yvelo, craft.xvelo)
 
-                thrust_x = (direction*0.001*craft_velo)*math.cos(craft_direction)
-                thrust_y = (direction*0.001*craft_velo)*math.sin(craft_direction)
+                thrust_x = (direction*0.001*craft_velo)*math.cos(craft.direction)
+                thrust_y = (direction*0.001*craft_velo)*math.sin(craft.direction)
 
                 craft.fuel_remaining -= 1
                 recalculate_lead = True
@@ -433,6 +452,7 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
         
         if relative_velocity >= escape_velocity:
             craft.parent = None
+            prograde = False
             recalculate_lead = True
 
         if relative_velocity < escape_velocity and craft.parent == None:
@@ -593,11 +613,9 @@ def main(DP_WIDTH, DP_HEIGHT, SIM_WIDTH, physics_fps, lead_length):
 
         # because the actual simulation and lead calculations are made with different time steps, 
         # the actual position might drift away from the lead
-        # if drift (distance) is too larger, the lead is re-calculated
-        deltax = craft.lead_positions[0][0] - craft.xpos
-        deltay = craft.lead_positions[0][1] - craft.ypos
-        distance = math.sqrt((deltax**2) + (deltay**2))
-        if distance > 500:
+        # if drift (distance) is too large, the lead is re-calculated
+        zero_index_drift = math.sqrt(((craft.lead_positions[0][0] - craft.xpos)**2) + ((craft.lead_positions[0][1] - craft.ypos)**2))
+        if zero_index_drift > 500:
             recalculate_lead = True
         else:
             recalculate_lead = False

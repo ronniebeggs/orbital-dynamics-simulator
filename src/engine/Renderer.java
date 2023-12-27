@@ -12,10 +12,12 @@ import java.awt.Color;
 public class Renderer {
     private int displayWidth;
     private int displayHeight;
+    private double scaleFactor;
 
-    public void initialize(int width, int height) {
+    public void initialize(int width, int height, double scaleFactor) {
         this.displayWidth = width;
         this.displayHeight = height;
+        this.scaleFactor = scaleFactor;
 
         StdDraw.setCanvasSize(width, height);
         StdDraw.setXscale(0, width);
@@ -25,11 +27,6 @@ public class Renderer {
         StdDraw.enableDoubleBuffering();
         StdDraw.show();
     }
-
-    /**
-     * Clears the display then renders each entity within the world.
-     * @param world current world state to be rendered.
-     * */
     public void renderFrame(World world) {
         StdDraw.clear(new Color(0, 0, 0));
         StdDraw.enableDoubleBuffering();
@@ -42,12 +39,19 @@ public class Renderer {
         if (entity instanceof Planet planet) {
             Coordinate position = planet.getPosition();
             StdDraw.setPenColor(planet.color);
-            StdDraw.filledCircle(position.getX() + ((double) displayWidth / 2), position.getY() + ((double) (displayWidth / 2)), planet.radius);
+            StdDraw.filledCircle(displayPosition(position.getX()), displayPosition(position.getY()), realToDisplayUnits(planet.radius));
         } else if (entity instanceof Spacecraft spacecraft) {
             Coordinate position = spacecraft.getPosition();
             StdDraw.setPenColor(StdDraw.RED);
-            StdDraw.filledSquare(position.getX() + ((double) displayWidth / 2), position.getY() + ((double) (displayWidth / 2)), 10);
+            StdDraw.filledSquare(displayPosition(position.getX()), displayPosition(position.getY()), 10);
         }
+    }
+
+    private double displayPosition(double realPosition) {
+        return ((double) (displayWidth / 2)) + realToDisplayUnits(realPosition);
+    }
+    private double realToDisplayUnits(double realPosition) {
+        return Math.round(realPosition / scaleFactor);
     }
 }
 

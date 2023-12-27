@@ -4,7 +4,7 @@ import java.awt.Color;
 public class Planet extends Satellite {
     public double radius;
     public Color color;
-    public Planet(Satellite parent, double radius, Color color, int mass, double x, double y, double xVelocity, double yVelocity, double orbitalRadius, double orbitalVelocity, double trueAnomaly) {
+    public Planet(Satellite parent, double radius, Color color, double mass, double x, double y, double xVelocity, double yVelocity, double orbitalRadius, double orbitalVelocity, double trueAnomaly) {
         super(parent, mass, x, y, xVelocity, yVelocity, orbitalRadius, orbitalVelocity, trueAnomaly);
         this.radius = radius;
         this.color = color;

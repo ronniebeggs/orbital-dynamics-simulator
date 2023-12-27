@@ -18,19 +18,21 @@ public class Engine {
         World world = new World();
         Planet planet = new Planet(null, 100, Color.BLUE, 100, 0, 0, 0, 0, 0, 0, 0);
         world.insertEntity(planet);
-        ter.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT);
+        ter.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT, (double) 1000000 / DISPLAY_WIDTH);
         ter.renderFrame(world);
     }
 
     public void mainLoop() {
         World world = new World();
-        Planet planet = new Planet(null, 100, Color.BLUE, 1000000, 0, 0, 0, 0, 0, 0, 0);
-        Spacecraft spacecraft = new Spacecraft(planet, 10, 200, 0, 0, 10, 0, 0, 0);
+        Planet planet = new Planet(null, 6378, Color.BLUE, 5.97 * Math.pow(10, 24), 0, 0, 0, 0, 0, 0, 0);
+        Spacecraft spacecraft = new Spacecraft(planet, 10, 7878, 0, 0, 0, 0, 0, 0);
         world.insertEntity(planet);
         world.insertEntity(spacecraft);
-        ter.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT);
         double physicsFPS = 240;
         double timeStep = 1 / physicsFPS;
+        double simulationWidth = 20000; // initial (real) width displayed to the user
+        double scaleFactor = simulationWidth / DISPLAY_WIDTH; // number of km displayed per pixel
+        ter.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT, scaleFactor);
         while (true) {
             ter.renderFrame(world);
             if (StdDraw.hasNextKeyTyped()) {

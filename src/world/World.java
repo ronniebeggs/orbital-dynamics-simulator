@@ -22,4 +22,7 @@ public class World {
     public Set<Entity> fetchEntities() {
         return entities;
     }
+    public void updateMovement() {
+
+    }
 }

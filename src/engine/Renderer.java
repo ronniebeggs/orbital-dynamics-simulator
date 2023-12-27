@@ -3,6 +3,7 @@ package engine;
 import edu.princeton.cs.algs4.StdDraw;
 import util.Coordinate;
 import world.Entity;
+import world.Spacecraft;
 import world.World;
 import world.Planet;
 
@@ -47,6 +48,10 @@ public class Renderer {
             Coordinate position = planet.getPosition();
             StdDraw.setPenColor(planet.color);
             StdDraw.filledCircle(position.getX() + ((double) displayWidth / 2), position.getY() + ((double) (displayWidth / 2)), planet.radius);
+        } else if (entity instanceof Spacecraft spacecraft) {
+            Coordinate position = spacecraft.getPosition();
+            StdDraw.setPenColor(StdDraw.RED);
+            StdDraw.filledSquare(position.getX() + ((double) displayWidth / 2), position.getY() + ((double) (displayWidth / 2)), 10);
         }
     }
 }

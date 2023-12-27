@@ -24,11 +24,13 @@ public class Engine {
 
     public void mainLoop() {
         World world = new World();
-        Planet planet = new Planet(null, 100, Color.BLUE, 100, 0, 0, 0, 0, 0, 0, 0);
-        Spacecraft spacecraft = new Spacecraft(planet, 10, 200, 0, 0, 0, 0, 0, 0);
+        Planet planet = new Planet(null, 100, Color.BLUE, 1000000, 0, 0, 0, 0, 0, 0, 0);
+        Spacecraft spacecraft = new Spacecraft(planet, 10, 200, 0, 0, 10, 0, 0, 0);
         world.insertEntity(planet);
         world.insertEntity(spacecraft);
         ter.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT);
+        double physicsFPS = 240;
+        double timeStep = 1 / physicsFPS;
         while (true) {
             ter.renderFrame(world);
             if (StdDraw.hasNextKeyTyped()) {
@@ -36,7 +38,8 @@ public class Engine {
                 boolean isTargetLocked = true;
                 handleMovement(keyPress);
             }
-            world.updateMovement();
+            world.updatePlanetMovement(timeStep);
+            world.updateSpacecraftMovement(timeStep, spacecraft);
         }
     }
 

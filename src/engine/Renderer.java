@@ -38,11 +38,6 @@ public class Renderer {
         }
         StdDraw.show();
     }
-
-    /**
-     * Render each of an entity's meshes in decreasing order of distance to the camera.
-     * @param entity entity to be rendered.
-     * */
     public void renderEntity(Entity entity) {
         if (entity instanceof Planet planet) {
             Coordinate position = planet.getPosition();

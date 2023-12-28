@@ -16,7 +16,7 @@ public class Satellite extends Entity {
     public double orbitalVelocity;
     public double trueAnomaly;
 
-    public Satellite(Satellite parent, double mass, double x, double y, double xVelocity, double yVelocity, double orbitalRadius, double orbitalVelocity, double trueAnomaly) {
+    public Satellite(Satellite parent, double mass, double x, double y, double xVelocity, double yVelocity) {
         super(x, y);
         this.mass = mass;
         this.xVelocity = xVelocity;
@@ -31,7 +31,6 @@ public class Satellite extends Entity {
             parent.addChild(this);
         }
     }
-
     public void addChild(Satellite satellite) {
         children.add(satellite);
     }

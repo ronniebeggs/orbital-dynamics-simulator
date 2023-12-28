@@ -2,10 +2,7 @@ package engine;
 
 import edu.princeton.cs.algs4.StdDraw;
 import util.Coordinate;
-import world.Entity;
-import world.Spacecraft;
-import world.World;
-import world.Planet;
+import world.*;
 
 import java.awt.Color;
 
@@ -30,8 +27,8 @@ public class Renderer {
     public void renderFrame(World world) {
         StdDraw.clear(new Color(0, 0, 0));
         StdDraw.enableDoubleBuffering();
-        for (Entity entity : world.fetchEntities()) {
-            renderEntity(entity);
+        for (Satellite satellite : world.fetchSatellites()) {
+            renderEntity(satellite);
         }
         StdDraw.show();
     }

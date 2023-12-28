@@ -14,30 +14,30 @@ public class Engine {
     /**
      * Test function for rendering individual scenes.
      * */
-    public void singleFrameTest() {
-        World world = new World();
-        Planet planet = new Planet(null, 100, Color.BLUE, 100, 0, 0, 0, 0, 0, 0, 0);
-        world.insertEntity(planet);
-        ter.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT, (double) 1000000 / DISPLAY_WIDTH);
-        ter.renderFrame(world);
-    }
+//    public void singleFrameTest() {
+//        Planet center = new Planet(StdDraw.BLUE, 6378, 5.97 * Math.pow(10, 24));
+//        World world = new World(center);
+//        ter.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT, (double) 100000 / DISPLAY_WIDTH);
+//        ter.renderFrame(world);
+//    }
 
     public void mainLoop() {
         World world = new World();
-        Planet planet = new Planet(null, 6378, Color.BLUE, 5.97 * Math.pow(10, 24), 0, 0, 0, 0, 0, 0, 0);
-        Spacecraft spacecraft = new Spacecraft(planet, 10, 7878, 0, 0, 0, 0, 0, 0);
-        world.insertEntity(planet);
-        world.insertEntity(spacecraft);
-        double physicsFPS = 240;
-        double timeStep = 1 / physicsFPS;
+        Planet planet = new Planet(StdDraw.BLUE, 6378, 5.97 * Math.pow(10, 24));
+        Spacecraft spacecraft = new Spacecraft(planet, 10, 0, 0, 0, 0, 7878, 0, 0);
+
+        double[] timeMultiplier = new double[]{1, 10, 100, 1000, 10000};
+        double physicsFPS = 1000;
+        double timeStep = timeMultiplier[2] / physicsFPS;
         double simulationWidth = 20000; // initial (real) width displayed to the user
         double scaleFactor = simulationWidth / DISPLAY_WIDTH; // number of km displayed per pixel
+
+        world.initializeWorld(planet);
         ter.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT, scaleFactor);
         while (true) {
             ter.renderFrame(world);
             if (StdDraw.hasNextKeyTyped()) {
                 char keyPress = StdDraw.nextKeyTyped();
-                boolean isTargetLocked = true;
                 handleMovement(keyPress);
             }
             world.updatePlanetMovement(timeStep);

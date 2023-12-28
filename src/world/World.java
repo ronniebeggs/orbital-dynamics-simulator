@@ -8,77 +8,68 @@ import java.util.List;
 import java.util.Set;
 
 public class World {
-//    public static class PlanetTree {
-//        public Planet planet;
-//        public Set<PlanetTree> children;
-//        public PlanetTree(Planet planet) {
-//            this.planet = planet;
-//            this.children = new HashSet<>();
-//        }
-//        public List<Satellite> childrenList() {
-//            List<Satellite> resultList = new ArrayList<>();
-//            childrenList(this, resultList);
-//            return resultList;
-//        }
-//        public void childrenList(PlanetTree current, List<Satellite> resultList) {
-//            resultList.add(current.planet);
-//            if (current.children.size() == 0) {
-//                return;
-//            }
-//            for (PlanetTree node : current.children) {
-//                childrenList(node, resultList);
-//            }
-//        }
-//        public void addPlanet(Planet planet) {
-//            children.contains()
-//        }
-//    }
     public double G = 6.67408 * Math.pow(10, -11);
+    public Set<Satellite> satellites;
     public Set<Planet> planets;
-    public Set<Entity> entities;
-//    public PlanetTree planetTree;
-
+    public Satellite simulationCenter;
     public World() {
-        this.entities = new HashSet<>();
+        this.satellites = new HashSet<>();
         this.planets = new HashSet<>();
     }
-
-    public void insertEntity(Entity entity) {
-        if (entity instanceof Planet planet) {
+    public void insertSatellite(Satellite satellite) {
+        if (satellite instanceof Planet planet) {
             planets.add(planet);
         }
-        entities.add(entity);
+        satellites.add(satellite);
     }
-    public Set<Entity> fetchEntities() {
-        return entities;
+    public Set<Satellite> fetchSatellites() {
+        return satellites;
     }
     public Set<Planet> fetchPlanets() {
         return planets;
     }
-    public void updatePlanetMovement(double timeStep) {
-        for (Planet planet : planets) {
-            if (planet.parent == null) {
-                planet.xPosition = 0;
-                planet.yPosition = 0;
-                continue;
+    public void initializeWorld(Satellite simulationCenter) {
+        this.simulationCenter = simulationCenter;
+        insertSatellite(simulationCenter);
+
+        simulationCenter.xPosition = 0;
+        simulationCenter.yPosition = 0;
+        simulationCenter.xVelocity = 0;
+        simulationCenter.yVelocity = 0;
+
+        for (Satellite satellite : simulationCenter.orderedChildrenList()) {
+            insertSatellite(satellite);
+
+            satellite.xPosition = satellite.orbitalRadius * Math.cos(satellite.trueAnomaly) + satellite.parent.xPosition;
+            satellite.yPosition = satellite.orbitalRadius * Math.sin(satellite.trueAnomaly) + satellite.parent.yPosition;
+
+            if (satellite.orbitalVelocity == 0) {
+                satellite.orbitalVelocity = Math.sqrt((G * satellite.parent.mass) / (1000 * satellite.orbitalRadius)) / 1000;
             }
+            satellite.xVelocity = satellite.orbitalVelocity * Math.cos(satellite.trueAnomaly + Math.PI / 2) + satellite.parent.xVelocity;
+            satellite.yVelocity = satellite.orbitalVelocity * Math.sin(satellite.trueAnomaly + Math.PI / 2) + satellite.parent.yVelocity;
+        }
+    }
+    public void updatePlanetMovement(double timeStep) {
+        for (Satellite satellite : simulationCenter.orderedChildrenList()) {
+            if (satellite instanceof Planet planet) {
+                Coordinate planetPosition = planet.getPosition();
+                Coordinate parentPosition = planet.parent.getPosition();
+                double deltaX = planetPosition.getX() - parentPosition.getX();
+                double deltaY = planetPosition.getY() - parentPosition.getY();
+                double distanceToParent = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+                double forceGravity = ((G * planet.mass * planet.parent.mass) / Math.pow(1000 * distanceToParent, 2)) / 1000;
+                double angle = Math.atan2(deltaY, deltaX);
 
-            Coordinate planetPosition = planet.getPosition();
-            Coordinate parentPosition = planet.parent.getPosition();
-            double deltaX = planetPosition.getX() - parentPosition.getX();
-            double deltaY = planetPosition.getY() - parentPosition.getY();
-            double distanceToParent = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
-            double forceGravity = ((G * planet.mass * planet.parent.mass) / Math.pow(1000 * distanceToParent, 2)) / 1000;
-            double angle = Math.atan2(deltaY, deltaX);
+                double xAcceleration = (forceGravity * -Math.cos(angle)) / planet.mass;
+                double yAcceleration = (forceGravity * -Math.sin(angle)) / planet.mass;
 
-            double xAcceleration = (forceGravity * -Math.cos(angle)) / planet.mass;
-            double yAcceleration = (forceGravity * -Math.sin(angle)) / planet.mass;
+                planet.xVelocity += xAcceleration * timeStep;
+                planet.yVelocity += yAcceleration * timeStep;
 
-            planet.xVelocity += xAcceleration * timeStep;
-            planet.yVelocity += yAcceleration * timeStep;
-
-            planet.xPosition += planet.xVelocity * timeStep;
-            planet.yPosition += planet.yVelocity * timeStep;
+                planet.xPosition += planet.xVelocity * timeStep;
+                planet.yPosition += planet.yVelocity * timeStep;
+            }
         }
     }
 
@@ -100,10 +91,14 @@ public class World {
             netYForce += forceGravity * -Math.sin(angle);
         }
 
+//        System.out.println(netXForce + ", " + netYForce);
+
         spacecraft.xVelocity += (netXForce / spacecraft.mass) * timeStep;
         spacecraft.yVelocity += (netYForce / spacecraft.mass) * timeStep;
 
         spacecraft.xPosition += spacecraft.xVelocity * timeStep;
         spacecraft.yPosition += spacecraft.yVelocity * timeStep;
+
+//         System.out.println(spacecraft.xPosition + ", " + spacecraft.yPosition + ", " + spacecraft.xVelocity + ", " + spacecraft.yVelocity + ", ");
     }
 }

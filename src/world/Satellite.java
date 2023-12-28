@@ -16,7 +16,7 @@ public class Satellite extends Entity {
     public double orbitalVelocity;
     public double trueAnomaly;
 
-    public Satellite(Satellite parent, double mass, double x, double y, double xVelocity, double yVelocity) {
+    public Satellite(Satellite parent, double mass, double x, double y, double xVelocity, double yVelocity, double orbitalRadius, double orbitalVelocity, double trueAnomaly) {
         super(x, y);
         this.mass = mass;
         this.xVelocity = xVelocity;
@@ -37,18 +37,18 @@ public class Satellite extends Entity {
     public Set<Satellite> getChildren() {
         return children;
     }
-    public List<Satellite> orderedChildrenList() {
-        List<Satellite> resultList = new ArrayList<>();
-        orderedChildrenList(this, resultList);
-        return resultList;
-    }
-    private void orderedChildrenList(Satellite current, List<Satellite> resultList) {
-        if (current.getChildren().size() == 0) {
-            return;
-        }
-        for (Satellite child : current.getChildren()) {
-            resultList.add(child);
-            orderedChildrenList(child, resultList);
-        }
-    }
+//    public List<Satellite> orderedChildrenList() {
+//        List<Satellite> resultList = new ArrayList<>();
+//        orderedChildrenList(this, resultList);
+//        return resultList;
+//    }
+//    private void orderedChildrenList(Satellite current, List<Satellite> resultList) {
+//        if (current.getChildren().size() == 0) {
+//            return;
+//        }
+//        for (Satellite child : current.getChildren()) {
+//            resultList.add(child);
+//            orderedChildrenList(child, resultList);
+//        }
+//    }
 }

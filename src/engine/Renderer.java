@@ -10,6 +10,7 @@ public class Renderer {
     private int displayWidth;
     private int displayHeight;
     private double scaleFactor;
+    private int targetIndex;
 
     public void initialize(int width, int height, double scaleFactor) {
         this.displayWidth = width;
@@ -27,7 +28,8 @@ public class Renderer {
     public void renderFrame(World world) {
         StdDraw.clear(new Color(0, 0, 0));
         StdDraw.enableDoubleBuffering();
-        for (Satellite satellite : world.fetchSatellites()) {
+        renderEntity(world.simulationCenter);
+        for (Satellite satellite : world.getOrderedChildren()) {
             renderEntity(satellite);
         }
         StdDraw.show();

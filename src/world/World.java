@@ -1,18 +1,14 @@
 package world;
 
 import util.Coordinate;
-import util.PlanetBuilder;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class World {
     public double G = 6.67408 * Math.pow(10, -11);
     public Set<Satellite> satellites;
     public Set<Planet> planets;
     public Satellite simulationCenter;
+    public List<Satellite> orderedChildren;
     public World() {
         this.satellites = new HashSet<>();
         this.planets = new HashSet<>();
@@ -29,26 +25,28 @@ public class World {
     public Set<Planet> fetchPlanets() {
         return planets;
     }
-    public void initializeWorld(PlanetBuilder center) {
-        this.simulationCenter = new Planet(center, null, 0, 0, 0, 0);
+    public void initializeWorld(Satellite center) {
+        this.simulationCenter = center;
         insertSatellite(simulationCenter);
 
-        for (PlanetBuilder child : center.orderedChildrenList()) {
+        setOrderedChildren();
+        orderedChildren = getOrderedChildren();
+        for (Satellite child : orderedChildren) {
 
-            double xPosition = child.orbitalRadius * Math.cos(child.trueAnomaly) + child.parent.xPosition;
-            double yPosition = child.orbitalRadius * Math.sin(child.trueAnomaly) + child.parent.yPosition;
+            child.xPosition = child.orbitalRadius * Math.cos(child.trueAnomaly) + child.parent.xPosition;
+            child.yPosition = child.orbitalRadius * Math.sin(child.trueAnomaly) + child.parent.yPosition;
 
             if (child.orbitalVelocity == 0) {
                 child.orbitalVelocity = Math.sqrt((G * child.parent.mass) / (1000 * child.orbitalRadius)) / 1000;
             }
-            double xVelocity = child.orbitalVelocity * Math.cos(child.trueAnomaly + Math.PI / 2) + child.parent.xVelocity;
-            double yVelocity = child.orbitalVelocity * Math.sin(child.trueAnomaly + Math.PI / 2) + child.parent.yVelocity;
+            child.xVelocity = child.orbitalVelocity * Math.cos(child.trueAnomaly + Math.PI / 2) + child.parent.xVelocity;
+            child.yVelocity = child.orbitalVelocity * Math.sin(child.trueAnomaly + Math.PI / 2) + child.parent.yVelocity;
 
-//            insertSatellite(satellite);
+            insertSatellite(child);
         }
     }
     public void updatePlanetMovement(double timeStep) {
-        for (Satellite satellite : simulationCenter.orderedChildrenList()) {
+        for (Satellite satellite : getOrderedChildren()) {
             if (satellite instanceof Planet planet) {
                 Coordinate planetPosition = planet.getPosition();
                 Coordinate parentPosition = planet.parent.getPosition();
@@ -88,14 +86,25 @@ public class World {
             netYForce += forceGravity * -Math.sin(angle);
         }
 
-//        System.out.println(netXForce + ", " + netYForce);
-
         spacecraft.xVelocity += (netXForce / spacecraft.mass) * timeStep;
         spacecraft.yVelocity += (netYForce / spacecraft.mass) * timeStep;
 
         spacecraft.xPosition += spacecraft.xVelocity * timeStep;
         spacecraft.yPosition += spacecraft.yVelocity * timeStep;
+    }
 
-//         System.out.println(spacecraft.xPosition + ", " + spacecraft.yPosition + ", " + spacecraft.xVelocity + ", " + spacecraft.yVelocity + ", ");
+    public List<Satellite> getOrderedChildren() {
+        return this.orderedChildren;
+    }
+    private void setOrderedChildren() {
+        List<Satellite> resultList = new ArrayList<>();
+        setOrderedChildren(simulationCenter, resultList);
+        this.orderedChildren = resultList;
+    }
+    private void setOrderedChildren(Satellite current, List<Satellite> resultList) {
+        for (Satellite child : current.getChildren()) {
+            resultList.add(child);
+            setOrderedChildren(child, resultList);
+        }
     }
 }

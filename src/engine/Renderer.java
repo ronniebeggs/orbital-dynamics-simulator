@@ -43,7 +43,9 @@ public class Renderer {
             StdDraw.filledSquare(displayPosition(position.getX()), displayPosition(position.getY()), 10);
         }
     }
-
+    public void changeScaleFactor(double multiplier) {
+        scaleFactor *= multiplier;
+    }
     private double displayPosition(double realPosition) {
         return ((double) (displayWidth / 2)) + realToDisplayUnits(realPosition);
     }

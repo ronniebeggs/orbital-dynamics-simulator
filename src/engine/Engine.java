@@ -7,18 +7,27 @@ import world.Spacecraft;
 import world.World;
 
 public class Engine {
-    Renderer renderer = new Renderer();
-    public final int DISPLAY_WIDTH = 600;
-    public final int DISPLAY_HEIGHT = 600;
-    /**
-     * Test function for rendering individual scenes.
-     * */
-//    public void singleFrameTest() {
-//        Planet center = new Planet(StdDraw.BLUE, 6378, 5.97 * Math.pow(10, 24));
-//        World world = new World(center);
-//        ter.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT, (double) 100000 / DISPLAY_WIDTH);
-//        ter.renderFrame(world);
-//    }
+    public Renderer renderer;
+    public int DISPLAY_WIDTH;
+    public int DISPLAY_HEIGHT;
+    public final double[] timeMultiplierOptions = new double[]{1, 10, 100, 1000, 10000};
+    public int multiplierIndex;
+    public double simulationWidth; // initial (real) width displayed to the user
+    public double scaleFactor; // number of km displayed per pixel
+    public double physicFPS; // number of physics frames computed every second
+    public double timeStep; // distance between each calculation (s)
+
+    public void initializeEngine(int displayWidth, int displayHeight, double simulationWidth, double physicsFPS) {
+        this.DISPLAY_WIDTH = displayWidth;
+        this.DISPLAY_HEIGHT = displayHeight;
+        this.renderer = new Renderer();
+
+        this.simulationWidth = simulationWidth;
+        this.physicFPS = physicsFPS;
+        this.multiplierIndex = 0;
+        setTimeStep(multiplierIndex);
+        this.scaleFactor = simulationWidth / DISPLAY_WIDTH;
+    }
 
     public void mainLoop() {
         World world = new World();
@@ -30,15 +39,9 @@ public class Engine {
         Planet mun = new Planet("Mun", kerbin, StdDraw.GRAY, 2737, 0.73 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 5, 0, 0);
         Planet duna = new Planet("Duna", kerbin, StdDraw.ORANGE, 2737, 0.5 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 3, 0, 0.1*Math.PI);
 
-
-        double[] timeMultiplier = new double[]{1, 10, 100, 1000, 10000};
-        double physicsFPS = 1000;
-        double timeStep = timeMultiplier[4] / physicsFPS;
-        double simulationWidth = 300000; // initial (real) width displayed to the user
-        double scaleFactor = simulationWidth / DISPLAY_WIDTH; // number of km displayed per pixel
-
+        initializeEngine(600, 600, 300000, 240);
         world.initializeWorld(kerbin);
-        renderer.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT, scaleFactor, world);
+        renderer.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT, scaleFactor, world.getOrderedSatellites());
         while (true) {
             renderer.renderFrame();
             if (StdDraw.hasNextKeyTyped()) {
@@ -48,7 +51,6 @@ public class Engine {
             world.updatePlanetMovement(timeStep);
         }
     }
-
     public void handleMovement(char keyPress) {
         switch (keyPress) {
             case '1' -> {
@@ -58,11 +60,27 @@ public class Engine {
                 renderer.changeScaleFactor(1.5);
             }
             case 'q' -> {
-                renderer.changeTargetIndex(-1);
-            }
-            case 'e' -> {
                 renderer.changeTargetIndex(1);
             }
+            case 'e' -> {
+                renderer.changeTargetIndex(-1);
+            }
+            case 'z' -> {
+                changeTimeMultiplier(1);
+            }
+            case 'x' -> {
+                changeTimeMultiplier(-1);
+            }
         };
+    }
+    public void setTimeStep(int multiplierIndex) {
+        timeStep = timeMultiplierOptions[multiplierIndex] / physicFPS;
+    }
+    public void changeTimeMultiplier(int change) {
+        int newIndex = multiplierIndex + change;
+        if (newIndex >= 0 && newIndex <= timeMultiplierOptions.length - 1) {
+            multiplierIndex = newIndex;
+            setTimeStep(multiplierIndex);
+        }
     }
 }

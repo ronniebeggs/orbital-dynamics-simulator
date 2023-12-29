@@ -15,12 +15,11 @@ public class Renderer {
     private int targetIndex;
     private Satellite targetSatellite;
 
-
-    public void initialize(int width, int height, double scaleFactor, World world) {
+    public void initialize(int width, int height, double scaleFactor, List<Satellite> targets) {
         this.displayWidth = width;
         this.displayHeight = height;
         this.scaleFactor = scaleFactor;
-        this.orderedTargetList = world.getOrderedSatellites();
+        this.orderedTargetList = targets;
         this.targetIndex = 0;
         this.targetSatellite = orderedTargetList.get(targetIndex);
 

@@ -19,19 +19,20 @@ public class World {
         }
         satellites.add(satellite);
     }
-    public Set<Satellite> fetchSatellites() {
+    public Set<Satellite> getSatellites() {
         return satellites;
     }
-    public Set<Planet> fetchPlanets() {
+    public Set<Planet> getPlanets() {
         return planets;
     }
     public void initializeWorld(Satellite center) {
         this.simulationCenter = center;
         insertSatellite(simulationCenter);
 
-        setOrderedChildren();
-        orderedChildren = getOrderedChildren();
-        for (Satellite child : orderedChildren) {
+        setOrderedSatellites();
+        orderedChildren = getOrderedSatellites();
+        for (int childIndex = 1; childIndex < orderedChildren.size(); childIndex++) {
+            Satellite child = orderedChildren.get(childIndex);
 
             child.xPosition = child.orbitalRadius * Math.cos(child.trueAnomaly) + child.parent.xPosition;
             child.yPosition = child.orbitalRadius * Math.sin(child.trueAnomaly) + child.parent.yPosition;
@@ -46,7 +47,8 @@ public class World {
         }
     }
     public void updatePlanetMovement(double timeStep) {
-        for (Satellite satellite : getOrderedChildren()) {
+        for (int index = 1; index < getOrderedSatellites().size(); index++) {
+            Satellite satellite = getOrderedSatellites().get(index);
             if (satellite instanceof Planet planet) {
                 Coordinate planetPosition = planet.getPosition();
                 Coordinate parentPosition = planet.parent.getPosition();
@@ -93,18 +95,18 @@ public class World {
         spacecraft.yPosition += spacecraft.yVelocity * timeStep;
     }
 
-    public List<Satellite> getOrderedChildren() {
+    public List<Satellite> getOrderedSatellites() {
         return this.orderedChildren;
     }
-    private void setOrderedChildren() {
+    private void setOrderedSatellites() {
         List<Satellite> resultList = new ArrayList<>();
-        setOrderedChildren(simulationCenter, resultList);
+        setOrderedSatellites(simulationCenter, resultList);
         this.orderedChildren = resultList;
     }
-    private void setOrderedChildren(Satellite current, List<Satellite> resultList) {
+    private void setOrderedSatellites(Satellite current, List<Satellite> resultList) {
+        resultList.add(current);
         for (Satellite child : current.getChildren()) {
-            resultList.add(child);
-            setOrderedChildren(child, resultList);
+            setOrderedSatellites(child, resultList);
         }
     }
 }

@@ -5,17 +5,24 @@ import util.Coordinate;
 import world.*;
 
 import java.awt.Color;
+import java.util.List;
 
 public class Renderer {
     private int displayWidth;
     private int displayHeight;
     private double scaleFactor;
+    private List<Satellite> orderedTargetList;
     private int targetIndex;
+    private Satellite targetSatellite;
 
-    public void initialize(int width, int height, double scaleFactor) {
+
+    public void initialize(int width, int height, double scaleFactor, World world) {
         this.displayWidth = width;
         this.displayHeight = height;
         this.scaleFactor = scaleFactor;
+        this.orderedTargetList = world.getOrderedSatellites();
+        this.targetIndex = 0;
+        this.targetSatellite = orderedTargetList.get(targetIndex);
 
         StdDraw.setCanvasSize(width, height);
         StdDraw.setXscale(0, width);
@@ -25,11 +32,10 @@ public class Renderer {
         StdDraw.enableDoubleBuffering();
         StdDraw.show();
     }
-    public void renderFrame(World world) {
+    public void renderFrame() {
         StdDraw.clear(new Color(0, 0, 0));
         StdDraw.enableDoubleBuffering();
-        renderEntity(world.simulationCenter);
-        for (Satellite satellite : world.getOrderedChildren()) {
+        for (Satellite satellite : this.orderedTargetList) {
             renderEntity(satellite);
         }
         StdDraw.show();
@@ -38,18 +44,29 @@ public class Renderer {
         if (entity instanceof Planet planet) {
             Coordinate position = planet.getPosition();
             StdDraw.setPenColor(planet.color);
-            StdDraw.filledCircle(displayPosition(position.getX()), displayPosition(position.getY()), realToDisplayUnits(planet.radius));
+            StdDraw.filledCircle(displayPositionX(position.getX()), displayPositionY(position.getY()), realToDisplayUnits(planet.radius));
         } else if (entity instanceof Spacecraft spacecraft) {
             Coordinate position = spacecraft.getPosition();
             StdDraw.setPenColor(StdDraw.RED);
-            StdDraw.filledSquare(displayPosition(position.getX()), displayPosition(position.getY()), 10);
+            StdDraw.filledSquare(displayPositionX(position.getX()), displayPositionY(position.getY()), 10);
         }
     }
     public void changeScaleFactor(double multiplier) {
         scaleFactor *= multiplier;
     }
-    private double displayPosition(double realPosition) {
-        return ((double) (displayWidth / 2)) + realToDisplayUnits(realPosition);
+    public void setTargetIndex(int newIndex) {
+        targetIndex = newIndex;
+        targetSatellite = orderedTargetList.get(targetIndex);
+    }
+    public void changeTargetIndex(int indexChange) {
+        targetIndex = (targetIndex + indexChange + orderedTargetList.size()) % orderedTargetList.size();
+        targetSatellite = orderedTargetList.get(targetIndex);
+    }
+    private double displayPositionX(double realXPosition) {
+        return ((double) (displayWidth / 2)) - realToDisplayUnits(targetSatellite.getPosition().getX()) + realToDisplayUnits(realXPosition);
+    }
+    private double displayPositionY(double realYPosition) {
+        return ((double) (displayHeight / 2)) - realToDisplayUnits(targetSatellite.getPosition().getY()) + realToDisplayUnits(realYPosition);
     }
     private double realToDisplayUnits(double realPosition) {
         return Math.round(realPosition / scaleFactor);

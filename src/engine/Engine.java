@@ -38,15 +38,14 @@ public class Engine {
         double scaleFactor = simulationWidth / DISPLAY_WIDTH; // number of km displayed per pixel
 
         world.initializeWorld(kerbin);
-        renderer.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT, scaleFactor);
+        renderer.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT, scaleFactor, world);
         while (true) {
-            renderer.renderFrame(world);
+            renderer.renderFrame();
             if (StdDraw.hasNextKeyTyped()) {
                 char keyPress = StdDraw.nextKeyTyped();
                 handleMovement(keyPress);
             }
             world.updatePlanetMovement(timeStep);
-//            world.updateSpacecraftMovement(timeStep, spacecraft);
         }
     }
 
@@ -57,6 +56,12 @@ public class Engine {
             }
             case '2' -> {
                 renderer.changeScaleFactor(1.5);
+            }
+            case 'q' -> {
+                renderer.changeTargetIndex(-1);
+            }
+            case 'e' -> {
+                renderer.changeTargetIndex(1);
             }
         };
     }

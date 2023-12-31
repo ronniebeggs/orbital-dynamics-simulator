@@ -37,18 +37,4 @@ public class Satellite extends Entity {
     public Set<Satellite> getChildren() {
         return children;
     }
-//    public List<Satellite> orderedChildrenList() {
-//        List<Satellite> resultList = new ArrayList<>();
-//        orderedChildrenList(this, resultList);
-//        return resultList;
-//    }
-//    private void orderedChildrenList(Satellite current, List<Satellite> resultList) {
-//        if (current.getChildren().size() == 0) {
-//            return;
-//        }
-//        for (Satellite child : current.getChildren()) {
-//            resultList.add(child);
-//            orderedChildrenList(child, resultList);
-//        }
-//    }
 }

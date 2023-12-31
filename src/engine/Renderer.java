@@ -46,8 +46,15 @@ public class Renderer {
             StdDraw.filledCircle(displayPositionX(position.getX()), displayPositionY(position.getY()), realToDisplayUnits(planet.radius));
         } else if (entity instanceof Spacecraft spacecraft) {
             Coordinate position = spacecraft.getPosition();
+            double displayX = displayPositionX(position.getX());
+            double displayY = displayPositionY(position.getY());
             StdDraw.setPenColor(StdDraw.RED);
-            StdDraw.filledSquare(displayPositionX(position.getX()), displayPositionY(position.getY()), 10);
+            StdDraw.filledCircle(displayX, displayY, realToDisplayUnits(spacecraft.shipSize));
+            StdDraw.setPenColor(StdDraw.GREEN);
+            StdDraw.filledPolygon(
+                    new double[]{displayX, displayX - 5, displayX + 5},
+                    new double[]{displayY, displayY + 10, displayY + 10}
+            );
         }
     }
     public void changeScaleFactor(double multiplier) {

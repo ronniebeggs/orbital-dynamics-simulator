@@ -27,6 +27,8 @@ public class World {
     }
     public void initializeWorld(Satellite center) {
         this.simulationCenter = center;
+        simulationCenter.setPosition(0, 0);
+        simulationCenter.setVelocity(0, 0);
         insertSatellite(simulationCenter);
 
         setOrderedSatellites();
@@ -34,24 +36,35 @@ public class World {
         for (int childIndex = 1; childIndex < orderedChildren.size(); childIndex++) {
             Satellite child = orderedChildren.get(childIndex);
 
-            child.xPosition = child.orbitalRadius * Math.cos(child.trueAnomaly) + child.parent.xPosition;
-            child.yPosition = child.orbitalRadius * Math.sin(child.trueAnomaly) + child.parent.yPosition;
+            Coordinate parentPosition = child.parent.getPosition();
+            child.setPosition(
+                    child.orbitalRadius * Math.cos(child.trueAnomaly) + parentPosition.getX(),
+                    child.orbitalRadius * Math.sin(child.trueAnomaly) + parentPosition.getY()
+            );
 
             if (child.orbitalVelocity == 0) {
                 child.orbitalVelocity = Math.sqrt((G * child.parent.mass) / (1000 * child.orbitalRadius)) / 1000;
             }
-            child.xVelocity = child.orbitalVelocity * Math.cos(child.trueAnomaly + Math.PI / 2) + child.parent.xVelocity;
-            child.yVelocity = child.orbitalVelocity * Math.sin(child.trueAnomaly + Math.PI / 2) + child.parent.yVelocity;
+
+            Coordinate parentVelocity = child.parent.getVelocity();
+            child.setVelocity(
+                    child.orbitalVelocity * Math.cos(child.trueAnomaly + Math.PI / 2) + parentVelocity.getX(),
+                    child.orbitalVelocity * Math.sin(child.trueAnomaly + Math.PI / 2) + parentVelocity.getY()
+            );
 
             insertSatellite(child);
         }
     }
     public void updatePlanetMovement(double timeStep) {
-        for (int index = 1; index < getOrderedSatellites().size(); index++) {
-            Satellite satellite = getOrderedSatellites().get(index);
+
+        for (int index = 1; index < orderedChildren.size(); index++) {
+            Satellite satellite = orderedChildren.get(index);
+
             if (satellite instanceof Planet planet) {
+
                 Coordinate planetPosition = planet.getPosition();
                 Coordinate parentPosition = planet.parent.getPosition();
+
                 double deltaX = planetPosition.getX() - parentPosition.getX();
                 double deltaY = planetPosition.getY() - parentPosition.getY();
                 double distanceToParent = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
@@ -61,11 +74,12 @@ public class World {
                 double xAcceleration = (forceGravity * -Math.cos(angle)) / planet.mass;
                 double yAcceleration = (forceGravity * -Math.sin(angle)) / planet.mass;
 
-                planet.xVelocity += xAcceleration * timeStep;
-                planet.yVelocity += yAcceleration * timeStep;
+                Coordinate planetVelocity = planet.getVelocity();
+                planetVelocity.shiftX(xAcceleration * timeStep);
+                planetVelocity.shiftY(yAcceleration * timeStep);
 
-                planet.xPosition += planet.xVelocity * timeStep;
-                planet.yPosition += planet.yVelocity * timeStep;
+                planetPosition.shiftX(planetVelocity.getX() * timeStep);
+                planetPosition.shiftY(planetVelocity.getY() * timeStep);
             }
         }
     }
@@ -88,11 +102,12 @@ public class World {
             netYForce += forceGravity * -Math.sin(angle);
         }
 
-        spacecraft.xVelocity += (netXForce / spacecraft.mass) * timeStep;
-        spacecraft.yVelocity += (netYForce / spacecraft.mass) * timeStep;
+        Coordinate spacecraftVelocity = spacecraft.getVelocity();
+        spacecraftVelocity.shiftX((netXForce / spacecraft.mass) * timeStep);
+        spacecraftVelocity.shiftY((netYForce / spacecraft.mass) * timeStep);
 
-        spacecraft.xPosition += spacecraft.xVelocity * timeStep;
-        spacecraft.yPosition += spacecraft.yVelocity * timeStep;
+        spacecraftPosition.shiftX(spacecraftVelocity.getX() * timeStep);
+        spacecraftPosition.shiftY(spacecraftVelocity.getY() * timeStep);
     }
 
     public List<Satellite> getOrderedSatellites() {

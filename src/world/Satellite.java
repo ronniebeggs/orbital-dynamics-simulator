@@ -1,26 +1,21 @@
 package world;
 
-import java.util.ArrayList;
+import util.Coordinate;
+
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 public class Satellite extends Entity {
     public Satellite parent;
     public Set<Satellite> children;
-    public String name;
+    public Coordinate velocity;
     public double mass;
-    public double xVelocity;
-    public double yVelocity;
     public double orbitalRadius;
     public double orbitalVelocity;
     public double trueAnomaly;
 
-    public Satellite(Satellite parent, double mass, double x, double y, double xVelocity, double yVelocity, double orbitalRadius, double orbitalVelocity, double trueAnomaly) {
-        super(x, y);
+    public Satellite(Satellite parent, double mass, double orbitalRadius, double orbitalVelocity, double trueAnomaly) {
         this.mass = mass;
-        this.xVelocity = xVelocity;
-        this.yVelocity = yVelocity;
         this.orbitalRadius = orbitalRadius;
         this.orbitalVelocity = orbitalVelocity;
         this.trueAnomaly = trueAnomaly;
@@ -30,6 +25,12 @@ public class Satellite extends Entity {
         if (parent != null) {
             parent.addChild(this);
         }
+    }
+    public void setVelocity(double xVelocity, double yVelocity) {
+        this.velocity = new Coordinate(xVelocity, yVelocity);
+    }
+    public Coordinate getVelocity() {
+        return velocity;
     }
     public void addChild(Satellite satellite) {
         children.add(satellite);

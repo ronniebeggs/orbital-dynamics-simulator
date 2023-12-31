@@ -31,11 +31,7 @@ public class Engine {
 
     public void mainLoop() {
         World world = new World();
-//        PlanetBuilder kerbin = new PlanetBuilder("Kerbin", StdDraw.BLUE, 6378, 5.97 * Math.pow(10, 24));
-//        PlanetBuilder mun = new PlanetBuilder("Mun", kerbin, StdDraw.GRAY, 2737, 0.73 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 5, 0);
-//        PlanetBuilder duna = new PlanetBuilder("Duna", kerbin, StdDraw.ORANGE, 2737, 0.5 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 3, -0.1*Math.PI);
-
-        Planet kerbin = new Planet("Kerbin", null, StdDraw.BLUE, 6378, 5.97 * Math.pow(10, 24));
+        Planet kerbin = new Planet("Kerbin", StdDraw.BLUE, 6378, 5.97 * Math.pow(10, 24));
         Planet mun = new Planet("Mun", kerbin, StdDraw.GRAY, 2737, 0.73 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 5, 0, 0);
         Planet duna = new Planet("Duna", kerbin, StdDraw.ORANGE, 2737, 0.5 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 3, 0, 0.1*Math.PI);
         Spacecraft craft = new Spacecraft(kerbin, 10, 7878, 0, 0);

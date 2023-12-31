@@ -8,6 +8,18 @@ public class Coordinate {
         this.x = xInitial;
         this.y = yInitial;
     }
+    public void setX(double x) {
+        this.x = x;
+    }
+    public void setY(double y) {
+        this.y = y;
+    }
+    public void shiftX(double deltaX) {
+        this.x += deltaX;
+    }
+    public void shiftY(double deltaY) {
+        this.y += deltaY;
+    }
     public double getX() { return this.x; };
     public double getY() {
         return this.y;

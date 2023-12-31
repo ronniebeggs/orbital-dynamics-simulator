@@ -34,20 +34,20 @@ public class Renderer {
     public void renderFrame() {
         StdDraw.clear(new Color(0, 0, 0));
         StdDraw.enableDoubleBuffering();
-        for (Satellite satellite : this.orderedTargetList) {
+        for (Satellite satellite : orderedTargetList) {
             renderEntity(satellite);
         }
         StdDraw.show();
     }
     public void renderEntity(Entity entity) {
         if (entity instanceof Planet planet) {
-            Coordinate position = planet.getPosition();
+            Coordinate displayPosition = transformToDisplay(planet.getPosition());
             StdDraw.setPenColor(planet.color);
-            StdDraw.filledCircle(displayPositionX(position.getX()), displayPositionY(position.getY()), realToDisplayUnits(planet.radius));
+            StdDraw.filledCircle(displayPosition.getX(), displayPosition.getY(), realToDisplayUnits(planet.radius));
         } else if (entity instanceof Spacecraft spacecraft) {
-            Coordinate position = spacecraft.getPosition();
-            double displayX = displayPositionX(position.getX());
-            double displayY = displayPositionY(position.getY());
+            Coordinate displayPosition = transformToDisplay(spacecraft.getPosition());
+            double displayX = displayPosition.getX();
+            double displayY = displayPosition.getY();
             StdDraw.setPenColor(StdDraw.RED);
             StdDraw.filledCircle(displayX, displayY, realToDisplayUnits(spacecraft.shipSize));
             StdDraw.setPenColor(StdDraw.GREEN);
@@ -68,11 +68,11 @@ public class Renderer {
         targetIndex = (targetIndex + indexChange + orderedTargetList.size()) % orderedTargetList.size();
         targetSatellite = orderedTargetList.get(targetIndex);
     }
-    private double displayPositionX(double realXPosition) {
-        return ((double) (displayWidth / 2)) - realToDisplayUnits(targetSatellite.getPosition().getX()) + realToDisplayUnits(realXPosition);
-    }
-    private double displayPositionY(double realYPosition) {
-        return ((double) (displayHeight / 2)) - realToDisplayUnits(targetSatellite.getPosition().getY()) + realToDisplayUnits(realYPosition);
+    private Coordinate transformToDisplay(Coordinate realPosition) {
+        return new Coordinate(
+                ((double) (displayWidth / 2)) - realToDisplayUnits(targetSatellite.getPosition().getX()) + realToDisplayUnits(realPosition.getX()),
+                ((double) (displayHeight / 2)) - realToDisplayUnits(targetSatellite.getPosition().getY()) + realToDisplayUnits(realPosition.getY())
+        );
     }
     private double realToDisplayUnits(double realPosition) {
         return Math.round(realPosition / scaleFactor);

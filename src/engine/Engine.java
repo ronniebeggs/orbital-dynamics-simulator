@@ -34,7 +34,7 @@ public class Engine {
         Planet kerbin = new Planet("Kerbin", StdDraw.BLUE, 6378, 5.97 * Math.pow(10, 24));
         Planet mun = new Planet("Mun", kerbin, StdDraw.GRAY, 2737, 0.73 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 5, 0, 0);
         Planet duna = new Planet("Duna", kerbin, StdDraw.ORANGE, 2737, 0.5 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 3, 0, 0.1*Math.PI);
-        Spacecraft craft = new Spacecraft(kerbin, 10, 7878, 0, 0);
+        Spacecraft spacecraft = new Spacecraft(kerbin, 10, 7878, 0, 0);
         World world = new World(kerbin);
 
         initializeEngine(600, 600, 300000, 240);
@@ -43,13 +43,13 @@ public class Engine {
             renderer.renderFrame();
             if (StdDraw.hasNextKeyTyped()) {
                 char keyPress = StdDraw.nextKeyTyped();
-                handleMovement(keyPress);
+                handleMovement(spacecraft, keyPress);
             }
             world.updatePlanetMovement(timeStep);
-            world.updateSpacecraftMovement(timeStep, craft);
+            world.updateSpacecraftMovement(timeStep, spacecraft);
         }
     }
-    public void handleMovement(char keyPress) {
+    public void handleMovement(Spacecraft spacecraft, char keyPress) {
         switch (keyPress) {
             case '1' -> {
                 renderer.changeScaleFactor(0.5);
@@ -68,6 +68,12 @@ public class Engine {
             }
             case 'x' -> {
                 changeTimeMultiplier(-1);
+            }
+            case 'w' -> {
+                spacecraft.engageThrust(1, 0.005);
+            }
+            case 's' -> {
+                spacecraft.engageThrust(-1, 0.005);
             }
         };
     }

@@ -1,6 +1,8 @@
 package world;
 
 import util.Coordinate;
+import util.LeadNode;
+
 import java.util.*;
 
 public class World {
@@ -10,8 +12,9 @@ public class World {
     public Satellite simulationCenter;
     public List<Satellite> orderedChildren;
     public Spacecraft spacecraft;
-    public World(Satellite center) {
+    public World(Satellite center, Spacecraft spacecraft) {
         this.simulationCenter = center;
+        this.spacecraft = spacecraft;
         this.satellites = new HashSet<>();
         this.planets = new HashSet<>();
         initializeWorld();
@@ -87,7 +90,7 @@ public class World {
         }
     }
 
-    public void updateSpacecraftMovement(double timeStep, Spacecraft spacecraft) {
+    public void updateSpacecraftMovement(double timeStep) {
         Coordinate spacecraftPosition = spacecraft.getPosition();
 
         double netXForce = 0;
@@ -118,5 +121,87 @@ public class World {
     }
     public void setChildrenList(Satellite simulationCenter) {
         this.orderedChildren = simulationCenter.flattenPlanetTree(simulationCenter);
+    }
+    public void calculateLead(double leadStep, int leadLength) {
+        for (Satellite satellite : satellites) {
+            satellite.getLeadPositions().addLast(satellite.getPosition());
+            satellite.getLeadVelocities().addLast(satellite.getVelocity());
+        }
+
+        for (int leadIndex = 0; leadIndex < leadLength; leadIndex++) {
+            calculatePlanetLeadStep(leadStep);
+            calculateCraftLeadStep(leadStep);
+        }
+    }
+    public void calculatePlanetLeadStep(double leadStep) {
+        simulationCenter.getLeadPositions().add(
+                new Coordinate(0, 0)
+        );
+        simulationCenter.getLeadVelocities().add(
+                new Coordinate(0, 0)
+        );
+
+        for (int index = 1; index < orderedChildren.size(); index++) {
+            if (orderedChildren.get(index) instanceof Planet planet) {
+
+                Coordinate planetLeadPosition = planet.getLeadPositions().getLast();
+                Coordinate parentLeadPosition = planet.parent.getLeadPositions().getLast();
+
+                double deltaX = planetLeadPosition.getX() - parentLeadPosition.getX();
+                double deltaY = planetLeadPosition.getY() - parentLeadPosition.getY();
+                double distanceToParent = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+                double forceGravity = ((G * planet.mass * planet.parent.mass) / Math.pow(1000 * distanceToParent, 2)) / 1000;
+                double angle = Math.atan2(deltaY, deltaX);
+
+                double xAcceleration = (forceGravity * -Math.cos(angle)) / planet.mass;
+                double yAcceleration = (forceGravity * -Math.sin(angle)) / planet.mass;
+
+                Coordinate planetVelocity = planet.getLeadVelocities().getLast();
+                Coordinate newVelocity = new Coordinate(
+                        planetVelocity.getX() + xAcceleration * leadStep,
+                        planetVelocity.getY() + xAcceleration * leadStep
+                );
+
+                Coordinate newPosition = new Coordinate(
+                        planetLeadPosition.getX() + newVelocity.getX() * leadStep,
+                        planetLeadPosition.getY() + newVelocity.getY() * leadStep
+                );
+
+                planet.getLeadVelocities().addLast(newVelocity);
+                planet.getLeadPositions().addLast(newPosition);
+            }
+        }
+    }
+    public void calculateCraftLeadStep(double leadStep) {
+        Coordinate spacecraftLeadPosition = spacecraft.getLeadPositions().getLast();
+
+        double netXForce = 0;
+        double netYForce = 0;
+
+        for (Planet planet : planets) {
+            Coordinate planetLeadPosition = planet.getLeadPositions().getLast();
+            double deltaX = spacecraftLeadPosition.getX() - planetLeadPosition.getX();
+            double deltaY = spacecraftLeadPosition.getY() - planetLeadPosition.getY();
+            double distanceToParent = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+            double forceGravity = ((G * spacecraft.mass * planet.mass) / Math.pow(1000 * distanceToParent, 2)) / 1000;
+            double angle = Math.atan2(deltaY, deltaX);
+
+            netXForce += forceGravity * -Math.cos(angle);
+            netYForce += forceGravity * -Math.sin(angle);
+        }
+
+        Coordinate spacecraftVelocity = spacecraft.getVelocity();
+        Coordinate newVelocity = new Coordinate(
+                spacecraftVelocity.getX() + (netXForce / spacecraft.mass) * leadStep,
+                spacecraftVelocity.getY() + (netYForce / spacecraft.mass) * leadStep
+        );
+
+        Coordinate newPosition = new Coordinate(
+                spacecraftLeadPosition.getX() + newVelocity.getX() * leadStep,
+                spacecraftLeadPosition.getY() + newVelocity.getY() * leadStep
+        );
+
+        spacecraft.getLeadVelocities().addLast(newVelocity);
+        spacecraft.getLeadPositions().addLast(newPosition);
     }
 }

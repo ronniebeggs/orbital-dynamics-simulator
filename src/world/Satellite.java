@@ -1,11 +1,9 @@
 package world;
 
 import util.Coordinate;
+import util.LeadNode;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Satellite extends Entity {
     public Satellite parent;
@@ -15,12 +13,16 @@ public class Satellite extends Entity {
     public double orbitalRadius;
     public double orbitalVelocity;
     public double trueAnomaly;
+    public Deque<Coordinate> leadPositions;
+    public Deque<Coordinate> leadVelocities;
 
     public Satellite(Satellite parent, double mass, double orbitalRadius, double orbitalVelocity, double trueAnomaly) {
         this.mass = mass;
         this.orbitalRadius = orbitalRadius;
         this.orbitalVelocity = orbitalVelocity;
         this.trueAnomaly = trueAnomaly;
+        this.leadPositions = new ArrayDeque<>();
+        this.leadVelocities = new ArrayDeque<>();
 
         this.parent = parent;
         this.children = new HashSet<>();
@@ -50,5 +52,11 @@ public class Satellite extends Entity {
         for (Satellite child : current.getChildren()) {
             flattenPlanetTree(child, resultList);
         }
+    }
+    public Deque<Coordinate> getLeadPositions() {
+        return leadPositions;
+    }
+    public Deque<Coordinate> getLeadVelocities() {
+        return leadVelocities;
     }
 }

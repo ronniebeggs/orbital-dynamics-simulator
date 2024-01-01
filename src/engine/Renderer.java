@@ -5,7 +5,6 @@ import util.Coordinate;
 import world.*;
 
 import java.awt.Color;
-import java.util.Iterator;
 import java.util.List;
 
 public class Renderer {
@@ -80,7 +79,11 @@ public class Renderer {
         }
     }
     public void drawSpacecraftLead(Spacecraft spacecraft) {
-
+        StdDraw.setPenColor(StdDraw.BOOK_RED);
+        for (Coordinate leadPosition : spacecraft.getLeadPositions()) {
+            Coordinate displayPosition = transformToDisplay(leadPosition);
+            StdDraw.filledCircle(displayPosition.getX(), displayPosition.getY(), 1);
+        }
     }
     public void changeScaleFactor(double multiplier) {
         scaleFactor *= multiplier;

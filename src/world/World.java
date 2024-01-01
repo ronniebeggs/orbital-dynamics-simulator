@@ -9,9 +9,12 @@ public class World {
     public Set<Planet> planets;
     public Satellite simulationCenter;
     public List<Satellite> orderedChildren;
-    public World() {
+    public Spacecraft spacecraft;
+    public World(Satellite center) {
+        this.simulationCenter = center;
         this.satellites = new HashSet<>();
         this.planets = new HashSet<>();
+        initializeWorld();
     }
     public void insertSatellite(Satellite satellite) {
         if (satellite instanceof Planet planet) {
@@ -19,20 +22,20 @@ public class World {
         }
         satellites.add(satellite);
     }
+    public Satellite getSimulationCenter() {
+        return simulationCenter;
+    }
     public Set<Satellite> getSatellites() {
         return satellites;
     }
     public Set<Planet> getPlanets() {
         return planets;
     }
-    public void initializeWorld(Satellite center) {
-        this.simulationCenter = center;
+    private void initializeWorld() {
         simulationCenter.setPosition(0, 0);
         simulationCenter.setVelocity(0, 0);
         insertSatellite(simulationCenter);
-
-        setOrderedSatellites();
-        orderedChildren = getOrderedSatellites();
+        setChildrenList(simulationCenter);
         for (int childIndex = 1; childIndex < orderedChildren.size(); childIndex++) {
             Satellite child = orderedChildren.get(childIndex);
 
@@ -110,18 +113,10 @@ public class World {
         spacecraftPosition.shiftY(spacecraftVelocity.getY() * timeStep);
     }
 
-    public List<Satellite> getOrderedSatellites() {
+    public List<Satellite> getOrderedChildren() {
         return this.orderedChildren;
     }
-    private void setOrderedSatellites() {
-        List<Satellite> resultList = new ArrayList<>();
-        setOrderedSatellites(simulationCenter, resultList);
-        this.orderedChildren = resultList;
-    }
-    private void setOrderedSatellites(Satellite current, List<Satellite> resultList) {
-        resultList.add(current);
-        for (Satellite child : current.getChildren()) {
-            setOrderedSatellites(child, resultList);
-        }
+    public void setChildrenList(Satellite simulationCenter) {
+        this.orderedChildren = simulationCenter.flattenPlanetTree(simulationCenter);
     }
 }

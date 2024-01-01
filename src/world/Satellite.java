@@ -2,7 +2,9 @@ package world;
 
 import util.Coordinate;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class Satellite extends Entity {
@@ -37,5 +39,16 @@ public class Satellite extends Entity {
     }
     public Set<Satellite> getChildren() {
         return children;
+    }
+    public List<Satellite> flattenPlanetTree(Satellite root) {
+        List<Satellite> resultList = new ArrayList<>();
+        flattenPlanetTree(root, resultList);
+        return resultList;
+    }
+    private void flattenPlanetTree(Satellite current, List<Satellite> resultList) {
+        resultList.add(current);
+        for (Satellite child : current.getChildren()) {
+            flattenPlanetTree(child, resultList);
+        }
     }
 }

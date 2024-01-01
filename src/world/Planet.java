@@ -1,6 +1,8 @@
 package world;
 
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Planet extends Satellite {
     public String name;

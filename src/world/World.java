@@ -130,8 +130,17 @@ public class World {
             satellite.getLeadVelocities().addLast(satellite.getVelocity());
         }
 
+        boolean outsideRadius = false;
         for (int leadIndex = 0; leadIndex < leadLength; leadIndex++) {
             calculateOneLeadInterval(leadStep);
+            Coordinate newLead = spacecraft.getLeadPositions().getLast();
+            double newLeadDistance = newLead.distanceTo(spacecraft.getPosition());
+            if (!outsideRadius && newLeadDistance > 500) {
+                outsideRadius = true;
+            }
+            if (outsideRadius && newLeadDistance < 500) {
+                break;
+            }
         }
     }
     public void calculateOneLeadInterval(double leadStep) {

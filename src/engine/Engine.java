@@ -46,6 +46,7 @@ public class Engine {
         initializeEngine(600, 600, 300000, 240, 10000);
         renderer.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT, scaleFactor, world);
         boolean calculateLead = true;
+        boolean thrustEngaged = false;
         while (true) {
 
             if (calculateLead) {
@@ -71,16 +72,17 @@ public class Engine {
 
             if (StdDraw.hasNextKeyTyped()) {
                 char keyPress = StdDraw.nextKeyTyped();
-                calculateLead = handleMovement(spacecraft, keyPress);
+                thrustEngaged = handleMovement(spacecraft, keyPress);
             }
             world.updatePlanetMovement(timeStep);
             world.updateSpacecraftMovement(timeStep);
 
+            calculateLead = thrustEngaged || spacecraft.checkLeadDrift(500);
             iterationCounter = (iterationCounter + 1) % Long.MAX_VALUE;
         }
     }
     public boolean handleMovement(Spacecraft spacecraft, char keyPress) {
-        boolean recalculateLead = false;
+        boolean thrustEngaged = false;
         switch (keyPress) {
             case '1' -> {
                 renderer.changeScaleFactor(0.5);
@@ -102,14 +104,14 @@ public class Engine {
             }
             case 'w' -> {
                 spacecraft.engageThrust(1, 0.005);
-                recalculateLead = true;
+                thrustEngaged = true;
             }
             case 's' -> {
                 spacecraft.engageThrust(-1, 0.005);
-                recalculateLead = true;
+                thrustEngaged = true;
             }
         };
-        return recalculateLead;
+        return thrustEngaged;
     }
     public void changeTimeMultiplier(int change) {
         int newIndex = multiplierIndex + change;

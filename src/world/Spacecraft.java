@@ -22,4 +22,8 @@ public class Spacecraft extends Satellite {
         velocity.shiftX(thrustMagnitude * Math.cos(craftDirection));
         velocity.shiftY(thrustMagnitude * Math.sin(craftDirection));
     }
+    public boolean checkLeadDrift(double threshold) {
+        Coordinate nextLeadPosition = getLeadPositions().getFirst();
+        return nextLeadPosition.distanceTo(getPosition()) > threshold;
+    }
 }

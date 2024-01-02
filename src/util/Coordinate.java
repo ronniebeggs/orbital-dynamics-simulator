@@ -24,7 +24,7 @@ public class Coordinate {
     public double getY() {
         return this.y;
     };
-    public double distance(Coordinate other) {
+    public double distanceTo(Coordinate other) {
         double deltaXSquared = Math.pow(getX() - other.getX(), 2);
         double deltaYSquared = Math.pow(getY() - other.getY(), 2);
         return Math.sqrt(deltaXSquared + deltaYSquared);

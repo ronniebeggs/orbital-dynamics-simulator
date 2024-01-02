@@ -122,18 +122,29 @@ public class World {
     public void setChildrenList(Satellite simulationCenter) {
         this.orderedChildren = simulationCenter.flattenPlanetTree(simulationCenter);
     }
-    public void calculateLead(double leadStep, int leadLength) {
+    public void calculateFullLead(double leadStep, int leadLength) {
         for (Satellite satellite : satellites) {
+            satellite.getLeadPositions().clear();
+            satellite.getLeadVelocities().clear();
             satellite.getLeadPositions().addLast(satellite.getPosition());
             satellite.getLeadVelocities().addLast(satellite.getVelocity());
         }
 
         for (int leadIndex = 0; leadIndex < leadLength; leadIndex++) {
-            calculatePlanetLeadStep(leadStep);
-            calculateCraftLeadStep(leadStep);
+            calculateOneLeadInterval(leadStep);
         }
     }
-    public void calculatePlanetLeadStep(double leadStep) {
+    public void calculateOneLeadInterval(double leadStep) {
+        calculatePlanetLeadInterval(leadStep);
+        calculateCraftLeadInterval(leadStep);
+    }
+    public void removeLeadInterval() {
+        for (Satellite satellite : satellites) {
+            satellite.getLeadPositions().removeFirst();
+            satellite.getLeadVelocities().removeFirst();
+        }
+    }
+    public void calculatePlanetLeadInterval(double leadStep) {
         simulationCenter.getLeadPositions().add(
                 new Coordinate(0, 0)
         );
@@ -172,7 +183,7 @@ public class World {
             }
         }
     }
-    public void calculateCraftLeadStep(double leadStep) {
+    public void calculateCraftLeadInterval(double leadStep) {
         Coordinate spacecraftLeadPosition = spacecraft.getLeadPositions().getLast();
 
         double netXForce = 0;
@@ -190,10 +201,10 @@ public class World {
             netYForce += forceGravity * -Math.sin(angle);
         }
 
-        Coordinate spacecraftVelocity = spacecraft.getVelocity();
+        Coordinate spacecraftLeadVelocity = spacecraft.getLeadVelocities().getLast();
         Coordinate newVelocity = new Coordinate(
-                spacecraftVelocity.getX() + (netXForce / spacecraft.mass) * leadStep,
-                spacecraftVelocity.getY() + (netYForce / spacecraft.mass) * leadStep
+                spacecraftLeadVelocity.getX() + (netXForce / spacecraft.mass) * leadStep,
+                spacecraftLeadVelocity.getY() + (netYForce / spacecraft.mass) * leadStep
         );
 
         Coordinate newPosition = new Coordinate(

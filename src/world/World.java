@@ -161,9 +161,10 @@ public class World {
                 double futureDistanceToParent = lastLead.distanceTo(parentLastLead);
                 double angleBetween = lastLead.angleBetween(parentLastLead);
 
+                Coordinate parentPosition = spacecraft.parent.getPosition();
                 Coordinate futureRelativeToParent = new Coordinate(
-                        parentLastLead.getX() + futureDistanceToParent * Math.cos(angleBetween),
-                        parentLastLead.getY() + futureDistanceToParent * Math.sin(angleBetween)
+                        parentPosition.getX() + futureDistanceToParent * Math.cos(angleBetween),
+                        parentPosition.getY() + futureDistanceToParent * Math.sin(angleBetween)
                 );
 
                 double newLeadDistance = spacecraft.getPosition().distanceTo(futureRelativeToParent);

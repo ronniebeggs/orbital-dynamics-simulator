@@ -43,9 +43,11 @@ public class Renderer {
                     drawPlanetLead(planet);
                 }
                 renderPlanet(planet);
+                renderSatelliteMarker(planet.getPosition(), StdDraw.PRINCETON_ORANGE);
             } else if (satellite instanceof Spacecraft spacecraft) {
                 drawSpacecraftLead(spacecraft);
                 renderSpacecraft(spacecraft);
+                renderSatelliteMarker(spacecraft.getPosition(), StdDraw.GREEN);
             }
         }
         StdDraw.show();
@@ -56,15 +58,16 @@ public class Renderer {
         StdDraw.filledCircle(displayPosition.getX(), displayPosition.getY(), realToDisplayUnits(planet.radius));
     }
     public void renderSpacecraft(Spacecraft spacecraft) {
-        Coordinate displayPosition = transformToDisplay(spacecraft.getPosition());
-        double displayX = displayPosition.getX();
-        double displayY = displayPosition.getY();
         StdDraw.setPenColor(StdDraw.RED);
-        StdDraw.filledCircle(displayX, displayY, realToDisplayUnits(spacecraft.shipSize));
-        StdDraw.setPenColor(StdDraw.GREEN);
+        Coordinate displayPosition = transformToDisplay(spacecraft.getPosition());
+        StdDraw.filledCircle(displayPosition.getX(), displayPosition.getY(), realToDisplayUnits(spacecraft.shipSize));
+    }
+    public void renderSatelliteMarker(Coordinate realPosition, Color color) {
+        StdDraw.setPenColor(color);
+        Coordinate displayPosition = transformToDisplay(realPosition);
         StdDraw.filledPolygon(
-                new double[]{displayX, displayX - 5, displayX + 5},
-                new double[]{displayY, displayY + 10, displayY + 10}
+                new double[]{displayPosition.getX(), displayPosition.getX() - 5, displayPosition.getX() + 5},
+                new double[]{displayPosition.getY(), displayPosition.getY() + 10, displayPosition.getY() + 10}
         );
     }
     public void drawPlanetLead(Planet planet) {

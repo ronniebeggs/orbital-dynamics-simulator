@@ -38,20 +38,18 @@ public class Engine {
     public void mainLoop() {
 
         Planet kerbin = new Planet("Kerbin", StdDraw.BLUE, 6378, 5.97 * Math.pow(10, 24));
-        Planet mun = new Planet("Mun", kerbin, StdDraw.GRAY, 2737, 0.73 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 5, 0, 0);
+        Planet mun = new Planet("Mun", kerbin, StdDraw.GRAY, 1737, 0.73 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 5, 0, 0);
         Planet duna = new Planet("Duna", kerbin, StdDraw.ORANGE, 2737, 0.5 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 3, 0, 0.1*Math.PI);
-        Spacecraft spacecraft = new Spacecraft(kerbin, 10, 7878, 0, -0.62 * Math.PI);
+        Spacecraft spacecraft = new Spacecraft(kerbin, StdDraw.RED, 10, 7878, 0, -0.62 * Math.PI);
         World world = new World(kerbin, spacecraft);
 
-        initializeEngine(600, 600, 300000, 240, 10000);
+        initializeEngine(800, 800, 300000, 240, 10000);
         renderer.initialize(DISPLAY_WIDTH, DISPLAY_HEIGHT, scaleFactor, world);
         boolean calculateLead = true;
-        boolean thrustEngaged = false;
         while (true) {
 
             if (calculateLead) {
                 world.calculateFullLead(leadStep, 1000);
-                calculateLead = false;
             } else {
                 if (leadFactor > 1) {
                     if (iterationCounter % Math.round(leadFactor) == 0) {
@@ -70,14 +68,15 @@ public class Engine {
             }
             renderer.renderFrame();
 
+            boolean thrustEngaged = false;
             if (StdDraw.hasNextKeyTyped()) {
                 char keyPress = StdDraw.nextKeyTyped();
                 thrustEngaged = handleMovement(spacecraft, keyPress);
             }
             world.updatePlanetMovement(timeStep);
-            world.updateSpacecraftMovement(timeStep);
+            boolean parentChanged = world.updateSpacecraftMovement(timeStep);
 
-            calculateLead = thrustEngaged || spacecraft.checkLeadDrift(500);
+            calculateLead = thrustEngaged || parentChanged || spacecraft.distanceToFirstLead() > 500;
             iterationCounter = (iterationCounter + 1) % Long.MAX_VALUE;
         }
     }

@@ -1,7 +1,7 @@
 package world;
 
+import edu.princeton.cs.algs4.StdDraw;
 import util.Coordinate;
-import util.LeadNode;
 
 import java.util.*;
 
@@ -90,12 +90,14 @@ public class World {
         }
     }
 
-    public void updateSpacecraftMovement(double timeStep) {
+    public boolean updateSpacecraftMovement(double timeStep) {
         Coordinate spacecraftPosition = spacecraft.getPosition();
 
         double netXForce = 0;
         double netYForce = 0;
 
+        Planet strongestInfluence = (Planet) simulationCenter;
+        double strongestGravity = 0;
         for (Planet planet : planets) {
             Coordinate planetPosition = planet.getPosition();
             double deltaX = spacecraftPosition.getX() - planetPosition.getX();
@@ -106,6 +108,11 @@ public class World {
 
             netXForce += forceGravity * -Math.cos(angle);
             netYForce += forceGravity * -Math.sin(angle);
+
+            if (forceGravity > strongestGravity) {
+                strongestInfluence = planet;
+                strongestGravity = forceGravity;
+            }
         }
 
         Coordinate spacecraftVelocity = spacecraft.getVelocity();
@@ -114,6 +121,20 @@ public class World {
 
         spacecraftPosition.shiftX(spacecraftVelocity.getX() * timeStep);
         spacecraftPosition.shiftY(spacecraftVelocity.getY() * timeStep);
+
+        double relativeVelocity = spacecraftVelocity.distanceTo(strongestInfluence.getVelocity());
+        double distanceToStrongest = spacecraft.getPosition().distanceTo(strongestInfluence.getPosition());
+        double escapeVelocity = Math.sqrt(2 * G * strongestInfluence.mass / (distanceToStrongest * 1000)) / 1000;
+
+        boolean recalculateLead = false;
+        if (spacecraft.parent != null && relativeVelocity >= escapeVelocity) {
+            spacecraft.parent = null;
+            recalculateLead = true;
+        } else if (spacecraft.parent == null && relativeVelocity < escapeVelocity) {
+            spacecraft.parent = strongestInfluence;
+            recalculateLead = true;
+        }
+        return recalculateLead;
     }
 
     public List<Satellite> getOrderedChildren() {
@@ -126,20 +147,32 @@ public class World {
         for (Satellite satellite : satellites) {
             satellite.getLeadPositions().clear();
             satellite.getLeadVelocities().clear();
-            satellite.getLeadPositions().addLast(satellite.getPosition());
-            satellite.getLeadVelocities().addLast(satellite.getVelocity());
+            satellite.getLeadPositions().addLast(satellite.getPosition().copyCoordinate());
+            satellite.getLeadVelocities().addLast(satellite.getVelocity().copyCoordinate());
         }
 
         boolean outsideRadius = false;
         for (int leadIndex = 0; leadIndex < leadLength; leadIndex++) {
             calculateOneLeadInterval(leadStep);
-            Coordinate newLead = spacecraft.getLeadPositions().getLast();
-            double newLeadDistance = newLead.distanceTo(spacecraft.getPosition());
-            if (!outsideRadius && newLeadDistance > 500) {
-                outsideRadius = true;
-            }
-            if (outsideRadius && newLeadDistance < 500) {
-                break;
+            if (spacecraft.parent != null) {
+                Coordinate lastLead = spacecraft.getLeadPositions().getLast();
+                Coordinate parentLastLead = spacecraft.parent.getLeadPositions().getLast();
+
+                double futureDistanceToParent = lastLead.distanceTo(parentLastLead);
+                double angleBetween = lastLead.angleBetween(parentLastLead);
+
+                Coordinate futureRelativeToParent = new Coordinate(
+                        parentLastLead.getX() + futureDistanceToParent * Math.cos(angleBetween),
+                        parentLastLead.getY() + futureDistanceToParent * Math.sin(angleBetween)
+                );
+
+                double newLeadDistance = spacecraft.getPosition().distanceTo(futureRelativeToParent);
+                if (!outsideRadius && newLeadDistance >= 1000) {
+                    outsideRadius = true;
+                }
+                if (outsideRadius && newLeadDistance < 1000) {
+                    break;
+                }
             }
         }
     }
@@ -179,7 +212,7 @@ public class World {
                 Coordinate planetVelocity = planet.getLeadVelocities().getLast();
                 Coordinate newVelocity = new Coordinate(
                         planetVelocity.getX() + xAcceleration * leadStep,
-                        planetVelocity.getY() + xAcceleration * leadStep
+                        planetVelocity.getY() + yAcceleration * leadStep
                 );
 
                 Coordinate newPosition = new Coordinate(

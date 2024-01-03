@@ -5,6 +5,7 @@ import util.Coordinate;
 import world.*;
 
 import java.awt.Color;
+import java.util.Iterator;
 import java.util.List;
 
 public class Renderer {
@@ -79,10 +80,31 @@ public class Renderer {
         }
     }
     public void drawSpacecraftLead(Spacecraft spacecraft) {
-        StdDraw.setPenColor(StdDraw.BOOK_RED);
-        for (Coordinate leadPosition : spacecraft.getLeadPositions()) {
-            Coordinate displayPosition = transformToDisplay(leadPosition);
-            StdDraw.filledCircle(displayPosition.getX(), displayPosition.getY(), 1);
+        if (spacecraft.parent == null) {
+            StdDraw.setPenColor(spacecraft.color);
+            for (Coordinate leadPosition : spacecraft.getLeadPositions()) {
+                Coordinate displayPosition = transformToDisplay(leadPosition);
+                StdDraw.filledCircle(displayPosition.getX(), displayPosition.getY(), 1);
+            }
+        } else {
+            Satellite parent = spacecraft.parent;
+            StdDraw.setPenColor(parent.color);
+            Iterator<Coordinate> spacecraftLeads = spacecraft.getLeadPositions().iterator();
+            Iterator<Coordinate> parentLeads = parent.getLeadPositions().iterator();
+            while (spacecraftLeads.hasNext() && parentLeads.hasNext()) {
+                Coordinate spacecraftLeadPosition = spacecraftLeads.next();
+                Coordinate parentLeadPosition = parentLeads.next();
+
+                double distanceToParent = spacecraftLeadPosition.distanceTo(parentLeadPosition);
+                double angleBetween = spacecraftLeadPosition.angleBetween(parentLeadPosition);
+
+                Coordinate positionRelativeToParent = new Coordinate(
+                        parent.getPosition().getX() + distanceToParent * Math.cos(angleBetween),
+                        parent.getPosition().getY() + distanceToParent * Math.sin(angleBetween)
+                );
+                Coordinate displayPosition = transformToDisplay(positionRelativeToParent);
+                StdDraw.filledCircle(displayPosition.getX(), displayPosition.getY(), 1);
+            }
         }
     }
     public void changeScaleFactor(double multiplier) {

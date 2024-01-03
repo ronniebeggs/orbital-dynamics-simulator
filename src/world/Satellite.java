@@ -3,10 +3,13 @@ package world;
 import util.Coordinate;
 import util.LeadNode;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 public class Satellite extends Entity {
     public Satellite parent;
+    public Color color;
     public Set<Satellite> children;
     public Coordinate velocity;
     public double mass;
@@ -16,7 +19,7 @@ public class Satellite extends Entity {
     public Deque<Coordinate> leadPositions;
     public Deque<Coordinate> leadVelocities;
 
-    public Satellite(Satellite parent, double mass, double orbitalRadius, double orbitalVelocity, double trueAnomaly) {
+    public Satellite(Satellite parent, Color color, double mass, double orbitalRadius, double orbitalVelocity, double trueAnomaly) {
         this.mass = mass;
         this.orbitalRadius = orbitalRadius;
         this.orbitalVelocity = orbitalVelocity;
@@ -25,6 +28,7 @@ public class Satellite extends Entity {
         this.leadVelocities = new ArrayDeque<>();
 
         this.parent = parent;
+        this.color = color;
         this.children = new HashSet<>();
         if (parent != null) {
             parent.addChild(this);

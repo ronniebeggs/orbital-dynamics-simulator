@@ -29,6 +29,14 @@ public class Coordinate {
         double deltaYSquared = Math.pow(getY() - other.getY(), 2);
         return Math.sqrt(deltaXSquared + deltaYSquared);
     }
+    public double angleBetween(Coordinate other) {
+        double deltaX = getX() - other.getX();
+        double deltaY = getY() - other.getY();
+        return Math.atan2(deltaY, deltaX);
+    }
+    public Coordinate copyCoordinate() {
+        return new Coordinate(getX(), getY());
+    }
     public double[] toArray() {
         return new double[]{x, y};
     }

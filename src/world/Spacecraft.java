@@ -2,13 +2,13 @@ package world;
 
 import util.Coordinate;
 
+import java.awt.*;
+
 public class Spacecraft extends Satellite {
     public double shipSize;
     public double direction;
-    public double relativeXVelocity;
-    public double relativeYVelocity;
-    public Spacecraft(Satellite parent, double mass, double orbitalRadius, double orbitalVelocity, double trueAnomaly) {
-        super(parent, mass, orbitalRadius, orbitalVelocity, trueAnomaly);
+    public Spacecraft(Satellite parent, Color color, double mass, double orbitalRadius, double orbitalVelocity, double trueAnomaly) {
+        super(parent, color, mass, orbitalRadius, orbitalVelocity, trueAnomaly);
         this.shipSize = 1000;
     }
     public void engageThrust(int thrustDirection, double percentIncrease) {
@@ -22,8 +22,12 @@ public class Spacecraft extends Satellite {
         velocity.shiftX(thrustMagnitude * Math.cos(craftDirection));
         velocity.shiftY(thrustMagnitude * Math.sin(craftDirection));
     }
-    public boolean checkLeadDrift(double threshold) {
+    public double distanceToFirstLead() {
         Coordinate nextLeadPosition = getLeadPositions().getFirst();
-        return nextLeadPosition.distanceTo(getPosition()) > threshold;
+        return nextLeadPosition.distanceTo(getPosition());
+    }
+    public double distanceToLastLead() {
+        Coordinate nextLeadPosition = getLeadPositions().getLast();
+        return nextLeadPosition.distanceTo(getPosition());
     }
 }

@@ -11,18 +11,18 @@ import java.util.List;
 public class Renderer {
     private int displayWidth;
     private int displayHeight;
-    private double scaleFactor;
+    private double scaleFactor; // number of kilometers displayed per pixel
+    private int targetIndex; // index tracking the target satellite
     private List<Satellite> orderedTargetList;
     private Satellite simulationCenter;
-    private int targetIndex;
     private Satellite targetSatellite;
 
-    public void initialize(int width, int height, double scaleFactor, World world) {
+    public void initialize(int width, int height, double scaleFactor, Satellite simulationCenter, List<Satellite> orderedChildren) {
         this.displayWidth = width;
         this.displayHeight = height;
         this.scaleFactor = scaleFactor;
-        this.orderedTargetList = world.getOrderedChildren();
-        this.simulationCenter = world.getSimulationCenter();
+        this.orderedTargetList = orderedChildren;
+        this.simulationCenter = simulationCenter;
         this.targetIndex = 0;
         this.targetSatellite = orderedTargetList.get(targetIndex);
 
@@ -34,34 +34,57 @@ public class Renderer {
         StdDraw.enableDoubleBuffering();
         StdDraw.show();
     }
+    /**
+     * Clears screen then renders all satellites and their lead positions.
+     * Renders entities in an order that places children above their parents.
+     * */
     public void renderFrame() {
         StdDraw.clear(new Color(0, 0, 0));
         StdDraw.enableDoubleBuffering();
+        // iterate through each satellite and trigger corresponding render method based on satellite type
         for (Satellite satellite : orderedTargetList) {
             if (satellite instanceof Planet planet) {
+                // simulation center's lead position remains constant, not worth rendering
                 if (!planet.equals(simulationCenter)) {
                     drawPlanetLead(planet);
                 }
                 renderPlanet(planet);
-                renderSatelliteMarker(planet.getPosition(), StdDraw.PRINCETON_ORANGE);
             } else if (satellite instanceof Spacecraft spacecraft) {
                 drawSpacecraftLead(spacecraft);
                 renderSpacecraft(spacecraft);
-                renderSatelliteMarker(spacecraft.getPosition(), StdDraw.GREEN);
+            }
+            // render a satellite marker with constant size regardless of zoom
+            if (satellite.equals(targetSatellite)) {
+                renderSatelliteMarker(satellite.getPosition(), StdDraw.GREEN);
+            } else {
+                renderSatelliteMarker(satellite.getPosition(), StdDraw.PRINCETON_ORANGE);
             }
         }
         StdDraw.show();
     }
+    /**
+     * Method for rendering planet objects.
+     * @param planet specified planet instance.
+     * */
     public void renderPlanet(Planet planet) {
         Coordinate displayPosition = transformToDisplay(planet.getPosition());
         StdDraw.setPenColor(planet.color);
         StdDraw.filledCircle(displayPosition.getX(), displayPosition.getY(), realToDisplayUnits(planet.radius));
     }
+    /**
+     * Method for rendering spacecraft objects.
+     * @param spacecraft specified spacecraft instance.
+     * */
     public void renderSpacecraft(Spacecraft spacecraft) {
         StdDraw.setPenColor(StdDraw.RED);
         Coordinate displayPosition = transformToDisplay(spacecraft.getPosition());
         StdDraw.filledCircle(displayPosition.getX(), displayPosition.getY(), realToDisplayUnits(spacecraft.shipSize));
     }
+    /**
+     * Renders a triangular marker so objects are easier to locate.
+     * @param realPosition position to place marker.
+     * @param color marker color.
+     * */
     public void renderSatelliteMarker(Coordinate realPosition, Color color) {
         StdDraw.setPenColor(color);
         Coordinate displayPosition = transformToDisplay(realPosition);
@@ -70,6 +93,10 @@ public class Renderer {
                 new double[]{displayPosition.getY(), displayPosition.getY() + 10, displayPosition.getY() + 10}
         );
     }
+    /**
+     * Draws the circular path that the inputted planet will follow in its orbit.
+     * @param planet specified planet instance.
+     * */
     public void drawPlanetLead(Planet planet) {
         StdDraw.setPenColor(planet.color);
         for (int degree = 0; degree < 360; degree++) {
@@ -82,9 +109,16 @@ public class Renderer {
             StdDraw.filledCircle(displayPosition.getX(), displayPosition.getY(), 1);
         }
     }
+    /**
+     * Renders each of the spacecraft's lead positions onto the display.
+     * Will render lead positions relative to an orbiting parent planet, so that the lead appears circular.
+     * Otherwise, it will render the absolute lead positions.
+     * @param spacecraft specified spacecraft instance.
+     */
     public void drawSpacecraftLead(Spacecraft spacecraft) {
         if (spacecraft.parent == null) {
             StdDraw.setPenColor(spacecraft.color);
+            // transform and render absolute lead positions
             for (Coordinate leadPosition : spacecraft.getLeadPositions()) {
                 Coordinate displayPosition = transformToDisplay(leadPosition);
                 StdDraw.filledCircle(displayPosition.getX(), displayPosition.getY(), 1);
@@ -97,10 +131,10 @@ public class Renderer {
             while (spacecraftLeads.hasNext() && parentLeads.hasNext()) {
                 Coordinate spacecraftLeadPosition = spacecraftLeads.next();
                 Coordinate parentLeadPosition = parentLeads.next();
-
-                double distanceToParent = spacecraftLeadPosition.distanceTo(parentLeadPosition);
-                double angleBetween = spacecraftLeadPosition.angleBetween(parentLeadPosition);
-
+                // calculate the spacecraft's lead position relative to its parent's future position
+                double distanceToParent = parentLeadPosition.distanceTo(spacecraftLeadPosition);
+                double angleBetween = parentLeadPosition.angleBetween(spacecraftLeadPosition);
+                // predict how the lead position will appear relative to its parent future position
                 Coordinate positionRelativeToParent = new Coordinate(
                         parent.getPosition().getX() + distanceToParent * Math.cos(angleBetween),
                         parent.getPosition().getY() + distanceToParent * Math.sin(angleBetween)
@@ -110,23 +144,37 @@ public class Renderer {
             }
         }
     }
+    /**
+     * Changes the real distance : display distance ratio to produce zoom effects.
+     * @param multiplier factor to multiply the current `scaleFactor` by.
+     * */
     public void changeScaleFactor(double multiplier) {
         scaleFactor *= multiplier;
     }
-    public void setTargetIndex(int newIndex) {
-        targetIndex = newIndex;
-        targetSatellite = orderedTargetList.get(targetIndex);
-    }
+    /**
+     * Shift the index which decides which of the satellites will be centrally displayed.
+     * @param indexChange value to shift the current index (will wrap around).
+     * */
     public void changeTargetIndex(int indexChange) {
         targetIndex = (targetIndex + indexChange + orderedTargetList.size()) % orderedTargetList.size();
         targetSatellite = orderedTargetList.get(targetIndex);
     }
+    /**
+     * Transform a position within the simulation to a display coordinate.
+     * @param realPosition position to be transformed (km).
+     * @return resulting position relative to the display (display pixels).
+     * */
     private Coordinate transformToDisplay(Coordinate realPosition) {
         return new Coordinate(
                 ((double) (displayWidth / 2)) - realToDisplayUnits(targetSatellite.getPosition().getX()) + realToDisplayUnits(realPosition.getX()),
                 ((double) (displayHeight / 2)) - realToDisplayUnits(targetSatellite.getPosition().getY()) + realToDisplayUnits(realPosition.getY())
         );
     }
+    /**
+     * Scale simulation distances to display distances.
+     * @param realPosition simulation distance to be scaled (km).
+     * @return resulting distance relative to the display (display pixels).
+     * */
     private double realToDisplayUnits(double realPosition) {
         return Math.round(realPosition / scaleFactor);
     }

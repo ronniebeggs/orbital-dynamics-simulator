@@ -229,7 +229,7 @@ planet_list = [kerbin, mun, duna]
 
 #SpaceCraft: name, mass, length, initial_parent, orbital_radius, true_anomaly=0, orbital_velo=None
 #if no value inputed for initial velocity, it will assume a circular orbit
-craft = SpaceCraft("Craft", 10, 3, mun, 7878, 0.62*math.pi)#, -12)
+craft = SpaceCraft("Craft", 10, 3, kerbin, 7878, 0.62*math.pi)#, -12)
 
 
 

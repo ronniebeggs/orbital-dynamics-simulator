@@ -13,16 +13,18 @@ public class Renderer {
     private int displayHeight;
     private double scaleFactor; // number of kilometers displayed per pixel
     private int targetIndex; // index tracking the target satellite
-    private List<Satellite> orderedTargetList;
+    private Camera camera;
     private Satellite simulationCenter;
+    private List<Satellite> orderedTargetList;
     private Satellite targetSatellite;
 
-    public void initialize(int width, int height, double scaleFactor, Satellite simulationCenter, List<Satellite> orderedChildren) {
+    public void initialize(int width, int height, double scaleFactor, Camera camera, Satellite simulationCenter, List<Satellite> orderedChildren) {
         this.displayWidth = width;
         this.displayHeight = height;
         this.scaleFactor = scaleFactor;
-        this.orderedTargetList = orderedChildren;
+        this.camera = camera;
         this.simulationCenter = simulationCenter;
+        this.orderedTargetList = orderedChildren;
         this.targetIndex = 0;
         this.targetSatellite = orderedTargetList.get(targetIndex);
 
@@ -60,6 +62,7 @@ public class Renderer {
                 renderSatelliteMarker(satellite.getPosition(), StdDraw.PRINCETON_ORANGE);
             }
         }
+        renderCamera();
         StdDraw.show();
     }
     /**
@@ -92,6 +95,23 @@ public class Renderer {
                 new double[]{displayPosition.getX(), displayPosition.getX() - 5, displayPosition.getX() + 5},
                 new double[]{displayPosition.getY(), displayPosition.getY() + 10, displayPosition.getY() + 10}
         );
+    }
+    public void renderCamera() {
+        StdDraw.setPenColor(StdDraw.MAGENTA);
+        double viewLineDistance = 1000;
+        Coordinate cameraPosition = camera.getPosition();
+        Coordinate cameraViewEndpoint = new Coordinate(
+                cameraPosition.getX() + viewLineDistance * Math.cos(camera.getAbsoluteDirection()),
+                cameraPosition.getY() + viewLineDistance * Math.sin(camera.getAbsoluteDirection())
+        );
+        Coordinate displayPosition = transformToDisplay(camera.getPosition());
+        Coordinate endpointDisplay = transformToDisplay(cameraViewEndpoint);
+        StdDraw.filledCircle(displayPosition.getX(), displayPosition.getY(), 3);
+        StdDraw.line(
+                displayPosition.getX(), displayPosition.getY(),
+                endpointDisplay.getX(), endpointDisplay.getY()
+        );
+
     }
     /**
      * Draws the circular path that the inputted planet will follow in its orbit.

@@ -1,6 +1,7 @@
 package engine;
 
 import edu.princeton.cs.algs4.StdDraw;
+import world.Camera;
 import world.Planet;
 import world.Spacecraft;
 import world.World;
@@ -34,7 +35,8 @@ public class Engine {
         Planet mun = new Planet("Mun", kerbin, StdDraw.GRAY, 1737, 0.73 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 5, 0, 0);
         Planet duna = new Planet("Duna", kerbin, StdDraw.ORANGE, 2737, 0.5 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 3, 0, 0.1*Math.PI);
         Spacecraft spacecraft = new Spacecraft(kerbin, StdDraw.RED, 10, 7878, 0, -0.62 * Math.PI);
-        World world = new World(kerbin, spacecraft);
+        Camera camera = new Camera(spacecraft, 1000);
+        World world = new World(kerbin, spacecraft, camera);
 
         int physicsFPS = 240;
         int leadFactor = 10000;

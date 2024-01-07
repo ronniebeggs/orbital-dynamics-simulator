@@ -11,9 +11,11 @@ public class World {
     public List<Satellite> orderedSatellites;
     public Satellite simulationCenter;
     public Spacecraft spacecraft;
-    public World(Satellite center, Spacecraft spacecraft) {
+    public Camera camera;
+    public World(Satellite center, Spacecraft spacecraft, Camera camera) {
         this.simulationCenter = center;
         this.spacecraft = spacecraft;
+        this.camera = camera;
         this.satellites = new HashSet<>();
         this.planets = new HashSet<>();
         initializeWorld();

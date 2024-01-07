@@ -49,6 +49,22 @@ public class World {
             insertSatellite(child);
         }
     }
+    private void initializeCamera() {
+        Satellite target = camera.getTarget();
+        Coordinate targetPosition = target.getPosition();
+
+        if (target.parent != null) {
+            // align camera view to include both the target and its parent
+            double targetRelativeToParent = target.parent.getPosition().angleBetween(targetPosition);
+            camera.setDirection(targetRelativeToParent + Math.PI);
+        }
+
+        double angleRelativeToTarget = camera.getDirection() + Math.PI;
+        camera.setPosition(
+                targetPosition.getX() + camera.getDistance() * Math.cos(angleRelativeToTarget),
+                targetPosition.getY() + camera.getDistance() * Math.sin(angleRelativeToTarget)
+        );
+    }
     /**
      * Declare satellite as a trackable and renderable entity within the world.
      * */

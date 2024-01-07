@@ -8,6 +8,12 @@ public class Camera extends Entity {
         this.target = initialTarget;
         this.distance = initialDistance;
     }
+    public void setTarget(Satellite newTarget) {
+        this.target = newTarget;
+    }
+    public Satellite getTarget() {
+        return this.target;
+    }
     public double getDistance() {
         return this.distance;
     }

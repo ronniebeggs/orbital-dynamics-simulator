@@ -1,11 +1,7 @@
 package engine;
 
 import edu.princeton.cs.algs4.StdDraw;
-import world.World;
-import world.Cube;
-import world.Camera;
-import world.Entity;
-import util.Coordinate;
+import world.*;
 
 /**
  * Class that handles the overarching operations of the project.
@@ -24,26 +20,20 @@ public class Engine {
      * */
     public void singleFrameTest() {
         World world = new World();
-        camera = new Camera(0, 0, 0);
-        Cube cube1 = new Cube(0, 0, 100, 50);
-        Cube cube2 = new Cube(0, 50, 100, 50);
-        Cube cube3 = new Cube(50, 0, 100, 50);
-        world.insertEntity(cube1);
-        world.insertEntity(cube2);
-        world.insertEntity(cube3);
+        camera = new Camera(0, 0, -100);
+        Sphere sphere = new Sphere(0, 0, 0, 0, 180, 0, 50, 24, 12);
+        world.insertEntity(sphere);
         ter.initialize(camera, DISPLAY_WIDTH, DISPLAY_HEIGHT, VERTICAL_VIEW_ANGLE);
         ter.renderFrame(world);
     }
 
     public void mainLoop() {
         World world = new World();
-        camera = new Camera(0, 0, 0);
-        Cube cube1 = new Cube(0, 0, 100, 50);
-        Cube cube2 = new Cube(0, 50, 100, 50);
-        Cube cube3 = new Cube(50, 0, 100, 50);
-        world.insertEntity(cube1);
-        world.insertEntity(cube2);
-        world.insertEntity(cube3);
+        camera = new Camera(0, 0, -200);
+        Spacecraft spacecraft = new Spacecraft(0, 0, -100, 0, 0, 0, 50, 10, 12);
+        Sphere sphere = new Sphere(0, 0, 0, 0, 180, 0, 50, 24, 12);
+        world.insertEntity(spacecraft);
+        world.insertEntity(sphere);
         ter.initialize(camera, DISPLAY_WIDTH, DISPLAY_HEIGHT, VERTICAL_VIEW_ANGLE);
         while (true) {
             ter.renderFrame(world);
@@ -51,9 +41,9 @@ public class Engine {
                 char keyPress = StdDraw.nextKeyTyped();
                 boolean isTargetLocked = true;
                 if (isTargetLocked) {
-                    fixedOrbitalMovement(cube1, keyPress);
+                    fixedOrbitalMovement(sphere, keyPress);
                 } else {
-                    freeMovement(cube1, keyPress);
+                    freeMovement(sphere, keyPress);
                 }
             }
         }

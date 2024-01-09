@@ -2,11 +2,8 @@ package world;
 import util.Coordinate;
 
 public class Camera extends Entity {
-    public double pitch;
-    public double yaw;
-    public double roll;
     public Camera(double x, double y, double z) {
-        super(x, y, z);
+        super(x, y, z, 0, 0, 0);
         this.pitch = 0;
         this.yaw = 90;
         this.roll = 0;

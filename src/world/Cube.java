@@ -8,18 +8,15 @@ import java.util.ArrayList;
 
 public class Cube extends Entity {
     int sideLength;
-    ArrayList<Coordinate> vertices;
     public Cube(int x, int y, int z, int sideLength) {
-        super(x, y, z);
+        super(x, y, z, 0, 0, 0);
         this.sideLength = sideLength;
         createCube();
     }
-
     /**
      * Initialize a basic multicolored cube for testing 3d projections.
      * */
     public void createCube() {
-        vertices = new ArrayList<>();
         int halfLength = sideLength / 2;
         // insert vertices clockwise from bottom left corner
         Coordinate vertex1 = new Coordinate(xPosition - halfLength, yPosition - halfLength, zPosition - halfLength);
@@ -30,14 +27,6 @@ public class Cube extends Entity {
         Coordinate vertex6 = new Coordinate(xPosition - halfLength, yPosition + halfLength, zPosition + halfLength);
         Coordinate vertex7 = new Coordinate(xPosition + halfLength, yPosition + halfLength, zPosition + halfLength);
         Coordinate vertex8 = new Coordinate(xPosition + halfLength, yPosition - halfLength, zPosition + halfLength);
-        vertices.add(vertex1);
-        vertices.add(vertex2);
-        vertices.add(vertex3);
-        vertices.add(vertex4);
-        vertices.add(vertex5);
-        vertices.add(vertex6);
-        vertices.add(vertex7);
-        vertices.add(vertex8);
         // create faces of the cube
         meshes = new ArrayList<>();
         Mesh frontFace = new Mesh(new Coordinate[]{vertex1, vertex2, vertex3, vertex4}, StdDraw.RED);

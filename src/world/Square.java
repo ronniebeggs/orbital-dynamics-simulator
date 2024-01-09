@@ -11,7 +11,7 @@ public class Square extends Entity {
     public List<Coordinate> vertices;
 
     public Square(int x, int y, int z, int length) {
-        super(x, y, z);
+        super(x, y, z, 0, 0, 0);
         sideLength = length;
         createVertices();
     }

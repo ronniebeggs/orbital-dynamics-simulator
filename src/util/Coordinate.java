@@ -30,6 +30,9 @@ public class Coordinate {
         double deltaZSquared = Math.pow(getZ() - other.getZ(), 2);
         return Math.sqrt(deltaXSquared + deltaZSquared);
     }
+    public double magnitude() {
+        return Math.sqrt(Math.pow(getX(), 2) + Math.pow(getY(), 2) + Math.pow(getZ(), 2));
+    }
     /**
      * Rotate relative position in the yaw direction.
      * @param entity target to transform position relative to.
@@ -137,6 +140,38 @@ public class Coordinate {
 //                dY + entityPosition.getY(),
 //                dZ + entityPosition.getZ()
 //        );
+    }
+    /**
+     * Computes the cross product of vectors v1 and v2.
+     * @param v1 represents the pointer finger vector.
+     * @param v2 represents the middle finger vector.
+     * @return cross product vector.
+     * */
+    public static Coordinate crossProduct(Coordinate v1, Coordinate v2) {
+        double x = v1.getY() * v2.getZ() - v1.getZ() * v2.getY();
+        double y = v1.getZ() * v2.getX() - v1.getX() * v2.getZ();
+        double z = v1.getX() * v2.getY() - v1.getY() * v2.getX();
+        return new Coordinate(x, y, z);
+    }
+    /**
+     * Computes the dot product of vectors v1 and v2.
+     * @return result dot product.
+     * */
+    public static double dotProduct(Coordinate v1, Coordinate v2) {
+        return (v1.getX() * v2.getX()) + (v1.getY() * v2.getY()) + (v1.getZ() * v2.getZ());
+    }
+    /**
+     * Normalize a given vector input (make magnitude == 1)
+     * @param vector input vector.
+     * @return resulting normalized vector.
+     * */
+    public static Coordinate normalize(Coordinate vector) {
+        double magnitude = vector.magnitude();
+        return new Coordinate(
+                vector.getX() / magnitude,
+                vector.getY() / magnitude,
+                vector.getZ() / magnitude
+        );
     }
     public double[] toArray() {
         return new double[]{x, y, z};

@@ -1,12 +1,13 @@
-package world;
+package world.assets;
 
 import edu.princeton.cs.algs4.StdDraw;
 import util.Coordinate;
+import world.RenderableEntity;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class Square extends Entity {
+public class Square extends RenderableEntity {
     public int sideLength;
     public List<Coordinate> vertices;
 

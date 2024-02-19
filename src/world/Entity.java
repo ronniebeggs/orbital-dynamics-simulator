@@ -14,8 +14,6 @@ public class Entity {
     public double pitch; // vertical rotation (looking up and down)
     public double yaw; // rotation within xz-plane (turning right and left)
     public double roll; // rotation relative to viewing plane (barrel roles)
-    public List<Mesh> meshes;
-
     public Entity(double x, double y, double z, double pitch, double yaw, double roll) {
         this.xPosition = x;
         this.yPosition = y;
@@ -34,8 +32,5 @@ public class Entity {
     }
     public Coordinate getDirection() {
         return new Coordinate(pitch, yaw, roll);
-    }
-    public List<Mesh> getMeshes() {
-        return this.meshes;
     }
 }

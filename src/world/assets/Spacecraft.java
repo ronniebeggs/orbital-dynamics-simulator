@@ -1,13 +1,11 @@
-package world;
+package world.assets;
 
 import edu.princeton.cs.algs4.StdDraw;
 import util.Coordinate;
 import util.Mesh;
+import world.RenderableEntity;
 
-import java.awt.*;
-import java.util.ArrayList;
-
-public class Spacecraft extends Entity {
+public class Spacecraft extends RenderableEntity {
     public double tankLength; // length of the spacecraft tank (also determines nose length)
     public double tankRadius; // radius of the spacecraft tank
     public int numSlices; // number of mesh slices
@@ -16,7 +14,6 @@ public class Spacecraft extends Entity {
         this.tankLength = tankLength;
         this.tankRadius = tankRadius;
         this.numSlices = numSlices;
-        this.meshes = new ArrayList<>();
         createMesh();
     }
     /** Create the surface mesh for the spacecraft entity. Initialize it pointing down the positive x-axis. */
@@ -55,17 +52,17 @@ public class Spacecraft extends Entity {
             ));
 
             // create the tank mesh slice
-            meshes.add(new Mesh(new Coordinate[]{previousBottom, previousTop, top, bottom}, StdDraw.GRAY));
+            meshes.add(new Mesh(this, new Coordinate[]{previousBottom, previousTop, top, bottom}, StdDraw.GRAY));
             // create the nose mesh slice
-            meshes.add(new Mesh(new Coordinate[]{previousTop, nose, top}, StdDraw.BOOK_RED));
+            meshes.add(new Mesh(this, new Coordinate[]{previousTop, nose, top}, StdDraw.BOOK_RED));
 
             previousTop = top;
             previousBottom = bottom;
         }
         // create the last tank and nose meshes connected to the original points
-        meshes.add(new Mesh(new Coordinate[]{previousBottom, previousTop, startTop, startBottom}, StdDraw.GRAY));
-        meshes.add(new Mesh(new Coordinate[]{previousTop, nose, startTop}, StdDraw.BOOK_RED));
+        meshes.add(new Mesh(this, new Coordinate[]{previousBottom, previousTop, startTop, startBottom}, StdDraw.GRAY));
+        meshes.add(new Mesh(this, new Coordinate[]{previousTop, nose, startTop}, StdDraw.BOOK_RED));
         // create mesh at the bottom of the tank
-        meshes.add(new Mesh(bottomCoordinates, StdDraw.PRINCETON_ORANGE));
+        meshes.add(new Mesh(this, bottomCoordinates, StdDraw.PRINCETON_ORANGE));
     }
 }

@@ -1,13 +1,14 @@
-package world;
+package world.assets;
 
 import edu.princeton.cs.algs4.StdDraw;
 import util.Coordinate;
 import util.Mesh;
+import world.RenderableEntity;
 
 import java.awt.*;
 import java.util.ArrayList;
 
-public class Sphere extends Entity {
+public class Sphere extends RenderableEntity {
     public double radius;
     public int numSlices; // number of vertical slices around the sphere (n)
     public int numStacks; // number of horizontal slices around the sphere (m)
@@ -16,7 +17,6 @@ public class Sphere extends Entity {
         this.radius = r;
         this.numSlices = n;
         this.numStacks = m;
-        this.meshes = new ArrayList<>();
         createMesh();
     }
     /** Create a UV Sphere surface mesh according to the inputted number of slices/stacks. */
@@ -27,14 +27,9 @@ public class Sphere extends Entity {
         Coordinate top = new Coordinate(xPosition, yPosition + radius, zPosition);
         Coordinate bottom = new Coordinate(xPosition, yPosition - radius, zPosition);
 
+        Color meshColor = StdDraw.BOOK_BLUE;
         // iterate through each slice (vertical section) and create meshes from the top down
         for (int n = 0; n < numSlices; n++) {
-            // alternate slice color to better visualize mesh
-            Color meshColor = StdDraw.BOOK_BLUE;
-            if (n % 2 == 0) {
-                meshColor = StdDraw.BOOK_RED;
-            }
-
             double theta = n * sliceAngle; // angle parallel to the equator (longitude)
             double phi = stackAngle; // angle parallel to y-axis (latitude)
 
@@ -51,7 +46,7 @@ public class Sphere extends Entity {
             double z1 = distanceFromYAxis * Math.sin(theta + sliceAngle);
             Coordinate v1 = Coordinate.fullPositionRotation(this,new Coordinate(x1, y, z1));
 
-            meshes.add(new Mesh(new Coordinate[]{top, v0, v1}, meshColor));
+            meshes.add(new Mesh(this, new Coordinate[]{top, v0, v1}, meshColor));
 
             // save previously computed coordinates to limit duplicates
             Coordinate previousV0 = v0;
@@ -73,14 +68,14 @@ public class Sphere extends Entity {
                 z1 = zPosition + distanceFromYAxis * Math.sin(theta + sliceAngle);
                 v1 = Coordinate.fullPositionRotation(this, new Coordinate(x1, y, z1));
 
-                meshes.add(new Mesh(new Coordinate[]{previousV0, v0, v1, previousV1}, meshColor));
+                meshes.add(new Mesh(this, new Coordinate[]{previousV0, v0, v1, previousV1}, meshColor));
 
                 previousV0 = v0;
                 previousV1 = v1;
             }
 
             // add bottom triangle
-            meshes.add(new Mesh(new Coordinate[]{previousV0, bottom, previousV1}, meshColor));
+            meshes.add(new Mesh(this, new Coordinate[]{previousV0, bottom, previousV1}, meshColor));
         }
     }
 

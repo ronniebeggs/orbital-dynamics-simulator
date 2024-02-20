@@ -7,19 +7,29 @@ import util.Coordinate;
  * It's the parent class for all `Satellite`s and the `Camera`.
  * */
 public class Entity {
-    public Coordinate position;
-    /**
-     * Set the position of the entity by instantiating a new `Coordinate`.
-     * @param xPosition entity's position along the x-axis.
-     * @param yPosition entity's position along the y-axis.
-     * */
-    public void setPosition(double xPosition, double yPosition) {
-        this.position = new Coordinate(xPosition, yPosition);
+    public double xPosition;
+    public double yPosition;
+    public double zPosition;
+    public double pitch; // vertical rotation (looking up and down)
+    public double yaw; // rotation within xz-plane (turning right and left)
+    public double roll; // rotation relative to viewing plane (barrel roles)
+    public Entity(double x, double y, double z, double pitch, double yaw, double roll) {
+        this.xPosition = x;
+        this.yPosition = y;
+        this.zPosition = z;
+        this.pitch = pitch;
+        this.yaw = yaw;
+        this.roll = roll;
     }
-    /**
-     * @return the entity's current position `Coordinate`.
-     * */
     public Coordinate getPosition() {
-        return position;
+        return new Coordinate(xPosition, yPosition, zPosition);
+    }
+    public void setDirection(double pitch, double yaw, double roll) {
+        this.pitch = pitch;
+        this.yaw = yaw;
+        this.roll = roll;
+    }
+    public Coordinate getDirection() {
+        return new Coordinate(pitch, yaw, roll);
     }
 }

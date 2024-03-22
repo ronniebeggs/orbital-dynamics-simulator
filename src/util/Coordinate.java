@@ -12,32 +12,28 @@ public class Coordinate {
     public Coordinate(double xInitial, double yInitial) {
         this(xInitial, yInitial, 0);
     }
-
-    /** @param x clear and set the coordinate's x-component value. */
     public void setX(double x) {
         this.x = x;
     }
-    /** @param y clear and set the coordinate's y-component value. */
     public void setY(double y) {
         this.y = y;
     }
-    /** @param xChange value to add to the coordinate's x-component. */
+    public void setZ(double z) { this.z = z; }
     public void shiftX(double xChange) {
         this.x += xChange;
     }
-    /** @param yChange value to add to the coordinate's y-component. */
     public void shiftY(double yChange) {
         this.y += yChange;
     }
-    /** @return the coordinate's x-component. */
+    public void shiftZ(double zChange) {
+        this.z += zChange;
+    }
     public double getX() {
         return this.x;
     };
-    /** @return the coordinate's y-component. */
     public double getY() {
         return this.y;
     };
-    /** @return the coordinate's z-component. */
     public double getZ() {
         return this.z;
     };

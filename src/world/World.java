@@ -106,6 +106,7 @@ public class World {
     public void updatePlanetMovement(double timeStep) {
         for (int index = 1; index < orderedSatellites.size(); index++) {
             if (orderedSatellites.get(index) instanceof Planet planet) {
+//                System.out.println(planet.name + ": " + planet.getPosition().getX() + ", " + planet.getPosition().getY() + ", " + + planet.getPosition().getZ());
                 Coordinate planetPosition = planet.getPosition();
                 Coordinate parentPosition = planet.parent.getPosition();
 

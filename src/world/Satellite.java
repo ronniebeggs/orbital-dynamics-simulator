@@ -23,6 +23,7 @@ public class Satellite extends Entity {
     public Deque<Coordinate> leadVelocities; // deque containing predicted lead velocities
 
     public Satellite(Satellite parent, Color color, double mass, double orbitalRadius, double orbitalVelocity, double trueAnomaly) {
+        super(0, 0, 0, 0, 0, 0);
         this.mass = mass;
         this.orbitalRadius = orbitalRadius;
         this.orbitalVelocity = orbitalVelocity;

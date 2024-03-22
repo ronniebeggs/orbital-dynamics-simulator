@@ -6,6 +6,7 @@ public class Camera extends Entity {
     public double relativeDirection; // viewing angle relative to target at 0 (radians)
     public double distanceToTarget; // absolute distance between camera and the target (km)
     public Camera(Satellite initialTarget, double initialDistance) {
+        super(0, 0, 0, 0, 0, 0);
         this.target = initialTarget;
         this.distanceToTarget = initialDistance;
     }

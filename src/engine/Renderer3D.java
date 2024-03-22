@@ -78,7 +78,7 @@ public class Renderer3D {
 //            else if (satellite instanceof Spacecraft spacecraft) {
 //                renderSpacecraft(spacecraft);
 //            }
-//            // render a satellite marker with constant size regardless of zoom
+////            // render a satellite marker with constant size regardless of zoom
 //            if (satellite.equals(targetSatellite)) {
 //                renderSatelliteMarker(satellite.getPosition(), StdDraw.GREEN);
 //            } else {
@@ -112,7 +112,7 @@ public class Renderer3D {
      * */
     public void renderMesh(Mesh mesh) {
 //        Color adjustedColor = shadeMesh(mesh);
-        StdDraw.setPenColor(StdDraw.BOOK_BLUE);
+        StdDraw.setPenColor(mesh.getColor());
         int numVertices = mesh.getNumVertices();
         double[] xVertices = new double[numVertices];
         double[] yVertices = new double[numVertices];

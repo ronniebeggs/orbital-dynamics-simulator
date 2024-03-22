@@ -1,6 +1,7 @@
 package engine;
 
 import edu.princeton.cs.algs4.StdDraw;
+import util.Coordinate;
 import world.Camera;
 import world.Planet;
 import world.Spacecraft;
@@ -63,17 +64,23 @@ public class Engine {
             // handle movement controls
             boolean thrustEngaged = false; // must re-calculate lead if thrust controls engaged
             if (StdDraw.hasNextKeyTyped()) {
-                thrustEngaged = handleMovement(spacecraft, StdDraw.nextKeyTyped());
+                thrustEngaged = handleMovement(spacecraft, camera, StdDraw.nextKeyTyped());
             }
             world.updatePlanetMovement(timeStep);
             // must recalculate lead if the spacecraft's parent changes
             boolean parentChanged = world.updateSpacecraftMovement(timeStep);
             world.setCamera();
+            camera.pointToward(spacecraft);
             // lead calculated with larger time step, so lead will sometimes drift away from spacecraft -> must recalculate lead when this occurs
             boolean leadDrift = spacecraft.distanceToFirstLead() > 500;
             calculateLead = thrustEngaged || parentChanged || leadDrift;
             // increment iteration counter; ensure it doesn't exceed max value
             iterationCounter = (iterationCounter + 1) % Long.MAX_VALUE;
+
+//            camera.moveTowardTarget(spacecraft, -1000);
+            Coordinate cameraPosition = camera.getPosition();
+            System.out.println(camera.getRelativeDirection());
+            System.out.println(cameraPosition.getX() + ", " + cameraPosition.getY() + ", " + cameraPosition.getZ());
         }
     }
     /**
@@ -109,7 +116,7 @@ public class Engine {
      * @param keyPress character input from the `StdDraw` key press queue.
      * @return boolean indicating if thrust controls were initiated by users; must trigger a lead re-calculation.
      * */
-    public boolean handleMovement(Spacecraft spacecraft, char keyPress) {
+    public boolean handleMovement(Spacecraft spacecraft, Camera camera, char keyPress) {
         boolean thrustEngaged = false;
         switch (keyPress) {
             // ZOOM IN/OUT:
@@ -144,6 +151,18 @@ public class Engine {
             }
             case 'p' -> {
                 isRendering3d = !isRendering3d;
+            }
+            case 'i' -> {
+                camera.moveTowardTarget(-100);
+            }
+            case 'k' -> {
+                camera.moveTowardTarget(100);
+            }
+            case 'j' -> {
+                camera.rotateAroundTarget(-10);
+            }
+            case 'l' -> {
+                camera.rotateAroundTarget(10);
             }
         };
         return thrustEngaged;

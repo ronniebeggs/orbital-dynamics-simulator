@@ -37,7 +37,7 @@ public class Planet extends Satellite {
         Coordinate top = new Coordinate(xPosition, yPosition + radius, zPosition);
         Coordinate bottom = new Coordinate(xPosition, yPosition - radius, zPosition);
 
-        Color meshColor = StdDraw.BOOK_BLUE;
+        Color meshColor = color;
         // iterate through each slice (vertical section) and create meshes from the top down
         for (int n = 0; n < numSlices; n++) {
             double theta = n * sliceAngle; // angle parallel to the equator (longitude)

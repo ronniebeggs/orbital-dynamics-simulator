@@ -41,6 +41,9 @@ public class Camera extends Entity {
     public Coordinate getCameraTilt() {
         return new Coordinate(pitch, yaw, roll);
     }
+    public void rotateAroundTarget(double yawRotationDegrees) {
+        this.relativeDirection += Math.toRadians(yawRotationDegrees);
+    }
     /**
      * Point the camera toward the target entity by shifting pitch and yaw directions.
      * @param target entity to point at.
@@ -51,7 +54,7 @@ public class Camera extends Entity {
         // calculate the yaw (right-left view)
         double deltaX = targetPosition.getX() - cameraPosition.getX();
         double deltaY = targetPosition.getY() - cameraPosition.getY();
-        this.yaw = Math.toDegrees(Math.atan2(deltaY, deltaX));
+        this.yaw = Math.toDegrees(Math.atan2(deltaY, deltaX)) + 20;
         // calculate the pitch (up-down view)
         double deltaZ = targetPosition.getZ() - cameraPosition.getZ();
         double xyDistance = cameraPosition.distanceTo(targetPosition);
@@ -62,29 +65,29 @@ public class Camera extends Entity {
      * @param target entity to move toward and remain pointed at.
      * @param distance absolute change in distance to move the camera by.
      * */
-    public void moveTowardTarget(Entity target, double distance) {
-        Coordinate cameraPosition = getPosition();
-        Coordinate targetPosition = target.getPosition();
-        // calculate the angle of the camera relative to the target in the x-y plane
-        double deltaX = cameraPosition.getX() - targetPosition.getX();
-        double deltaY = cameraPosition.getY() - targetPosition.getY();
-        double relativeAngleXY = Math.atan2(deltaY, deltaX);
-        double currentDistanceXY = cameraPosition.distanceTo(targetPosition);
-        // calculate the angle of the camera relative to the target in the xy-z plane
-        double deltaZ = cameraPosition.getZ() - targetPosition.getZ();
-        double relativeAngleZ = Math.atan2(deltaZ, currentDistanceXY);
-        // calculate the position changes that occur from this zooming movement
-        double distance3D = cameraPosition.distance3D(targetPosition);
-        double newZHeight = (distance3D - distance) * Math.sin(relativeAngleZ);
-        double newXYDistance = (distance3D - distance) * Math.cos(relativeAngleZ);
-        // update camera position and view angle
-        this.setPosition(
-                targetPosition.getX() + newXYDistance * Math.cos(relativeAngleXY),
-                targetPosition.getY() + newXYDistance * Math.sin(relativeAngleXY),
-                targetPosition.getZ() + newZHeight
-        );
-        pointToward(target);
+    public void moveTowardTarget(double distance) {
+        this.distanceToTarget += distance;
+//        Coordinate cameraPosition = getPosition();
+//        Coordinate targetPosition = target.getPosition();
+//        // calculate the angle of the camera relative to the target in the x-y plane
+//        double deltaX = cameraPosition.getX() - targetPosition.getX();
+//        double deltaY = cameraPosition.getY() - targetPosition.getY();
+//        double relativeAngleXY = Math.atan2(deltaY, deltaX);
+//        double currentDistanceXY = cameraPosition.distanceTo(targetPosition);
+//        // calculate the angle of the camera relative to the target in the xy-z plane
+//        double deltaZ = cameraPosition.getZ() - targetPosition.getZ();
+//        double relativeAngleZ = Math.atan2(deltaZ, currentDistanceXY);
+//        // calculate the position changes that occur from this zooming movement
+//        double distance3D = cameraPosition.distance3D(targetPosition);
+//        double newZHeight = (distance3D - distance) * Math.sin(relativeAngleZ);
+//        double newXYDistance = (distance3D - distance) * Math.cos(relativeAngleZ);
+//        // update camera position and view angle
+//        this.setPosition(
+//                targetPosition.getX() + newXYDistance * Math.cos(relativeAngleXY),
+//                targetPosition.getY() + newXYDistance * Math.sin(relativeAngleXY),
+//                targetPosition.getZ() + newZHeight
+//        );
+//        pointToward(target);
     }
-
 
 }

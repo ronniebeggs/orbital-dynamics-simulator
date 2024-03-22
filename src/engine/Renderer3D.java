@@ -37,6 +37,7 @@ public class Renderer3D {
     private double scaleFactor; // number of kilometers displayed per pixel
     private int targetIndex; // index tracking the target satellite
     private Camera camera;
+    private double focalLength;
     private Satellite simulationCenter;
     private List<Satellite> orderedTargetList;
     private Satellite targetSatellite;
@@ -46,6 +47,9 @@ public class Renderer3D {
         this.displayHeight = height;
         this.scaleFactor = scaleFactor;
         this.camera = camera;
+        int verticalViewAngle = 60;
+        this.focalLength = displayHeight / (2 * Math.tan(Math.toRadians(verticalViewAngle)));
+
         this.simulationCenter = simulationCenter;
         this.orderedTargetList = orderedChildren;
         this.targetIndex = 0;
@@ -125,32 +129,28 @@ public class Renderer3D {
      * @return renderable 2D coordinate.
      * */
     public Coordinate transformCoordinate(Coordinate position) {
-//        Coordinate cameraPosition = camera.getPosition();
-//        double X = position.getX() - cameraPosition.getX();
-//        double Y = position.getY() - cameraPosition.getY();
-//        double Z = position.getZ() - cameraPosition.getZ();
-//        // Theta = (thetaX, thetaY, thetaZ) -> tait-bryan angles
-//        Coordinate cameraTilt = camera.getCameraTilt();
-//        double thetaX = -Math.toRadians(cameraTilt.getX()); // pitch
-//        double thetaY = -Math.toRadians(cameraTilt.getY() - 90); // yaw
-//        double thetaZ = Math.toRadians(cameraTilt.getZ()); // roll
-//        // I have no idea if this is going to work
-//        double dX = Math.cos(thetaY) * (Math.sin(thetaZ) * Y + Math.cos(thetaZ) * X) - Math.sin(thetaY) * Z;
-//        double dY = Math.sin(thetaX) * (Math.cos(thetaY) * Z + Math.sin(thetaY) * (Math.sin(thetaZ) * Y + Math.cos(thetaZ) * X)) + Math.cos(thetaX) * (Math.cos(thetaZ) * Y - Math.sin(thetaZ) * X);
-//        double dZ = Math.cos(thetaX) * (Math.cos(thetaY) * Z + Math.sin(thetaY) * (Math.sin(thetaZ) * Y + Math.cos(thetaZ) * X)) - Math.sin(thetaX) * (Math.cos(thetaZ) * Y - Math.sin(thetaZ) * X);
-//        // E = (eX, eY, eZ) -> position of the display surface plane position relative to the camera pinhole
-//        double eX = 0;
-//        double eY = 0;
-//        double eZ = focalLength;
-//        // (bX, bY) -> transformed position on the 2d screen surface
-//        double bX = (double) ((eZ / dZ) * dX + eX);
-//        double bY = (double) ((eZ / dZ) * dY + eY);
-//        return new Coordinate(bX, bY, 0);
-        return null;
+        Coordinate cameraPosition = camera.getPosition();
+        double X = realToDisplayUnits(position.getX() - cameraPosition.getX());
+        double Y = realToDisplayUnits(position.getY() - cameraPosition.getY());
+        double Z = realToDisplayUnits(position.getZ() - cameraPosition.getZ());
+        // Theta = (thetaX, thetaY, thetaZ) -> tait-bryan angles
+        Coordinate cameraTilt = camera.getCameraTilt();
+        double thetaX = -Math.toRadians(cameraTilt.getX()); // pitch
+        double thetaY = -Math.toRadians(cameraTilt.getY() - 90); // yaw
+        double thetaZ = Math.toRadians(cameraTilt.getZ()); // roll
+        // I have no idea if this is going to work
+        double dX = Math.cos(thetaY) * (Math.sin(thetaZ) * Z + Math.cos(thetaZ) * X) - Math.sin(thetaY) * Y;
+        double dY = Math.sin(thetaX) * (Math.cos(thetaY) * Y + Math.sin(thetaY) * (Math.sin(thetaZ) * Z + Math.cos(thetaZ) * X)) + Math.cos(thetaX) * (Math.cos(thetaZ) * Z - Math.sin(thetaZ) * X);
+        double dZ = Math.cos(thetaX) * (Math.cos(thetaY) * Y + Math.sin(thetaY) * (Math.sin(thetaZ) * Z + Math.cos(thetaZ) * X)) - Math.sin(thetaX) * (Math.cos(thetaZ) * Z - Math.sin(thetaZ) * X);
+        // E = (eX, eY, eZ) -> position of the display surface plane position relative to the camera pinhole
+        double eX = 0;
+        double eY = 0;
+        double eZ = focalLength;
+        // (bX, bY) -> transformed position on the 2d screen surface
+        double bX = (double) ((eZ / dZ) * dX + eX);
+        double bY = (double) ((eZ / dZ) * dY + eY);
+        return new Coordinate(bX, bY, 0);
     }
-
-
-
 
     /**
      * Changes the real distance : display distance ratio to produce zoom effects.
@@ -166,17 +166,6 @@ public class Renderer3D {
     public void changeTargetIndex(int indexChange) {
         targetIndex = (targetIndex + indexChange + orderedTargetList.size()) % orderedTargetList.size();
         targetSatellite = orderedTargetList.get(targetIndex);
-    }
-    /**
-     * Transform a position within the simulation to a display coordinate.
-     * @param realPosition position to be transformed (km).
-     * @return resulting position relative to the display (display pixels).
-     * */
-    private Coordinate transformToDisplay(Coordinate realPosition) {
-        return new Coordinate(
-                ((double) (displayWidth / 2)) - realToDisplayUnits(targetSatellite.getPosition().getX()) + realToDisplayUnits(realPosition.getX()),
-                ((double) (displayHeight / 2)) - realToDisplayUnits(targetSatellite.getPosition().getY()) + realToDisplayUnits(realPosition.getY())
-        );
     }
     /**
      * Scale simulation distances to display distances.

@@ -146,6 +146,7 @@ public class Renderer3D {
 //        double bX = (double) ((eZ / dZ) * dX + eX);
 //        double bY = (double) ((eZ / dZ) * dY + eY);
 //        return new Coordinate(bX, bY, 0);
+        return null;
     }
 
 

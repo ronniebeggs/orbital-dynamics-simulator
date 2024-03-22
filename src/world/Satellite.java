@@ -10,7 +10,7 @@ import java.util.List;
  * A `Satellite` is an entity with mass capable of orbital motion around an object.
  * The `Satellite` class extends the `Entity` class, and is the parent of the `Planet` and `Spacecraft` classes.
  * */
-public class Satellite extends Entity {
+public class Satellite extends RenderableEntity {
     public Satellite parent; // object which the satellite orbits around
     public Color color; // primary color representing the satellite (color of its lead positions)
     public Set<Satellite> children; // all satellites which orbit around itself

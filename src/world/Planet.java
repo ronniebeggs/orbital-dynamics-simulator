@@ -21,6 +21,7 @@ public class Planet extends Satellite {
         this.radius = radius;
         this.numSlices = 24;
         this.numStacks = 12;
+        createMesh();
     }
 
     /** Create a UV Sphere surface mesh according to the inputted number of slices/stacks. */

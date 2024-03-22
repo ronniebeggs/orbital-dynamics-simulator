@@ -8,6 +8,8 @@ import world.World;
 
 public class Engine {
     public Renderer renderer;
+    public Renderer3D renderer3D;
+    public boolean isRendering3d;
     public final double[] timeMultiplierOptions = new double[]{1, 10, 100, 1000, 10000};
     public int multiplierIndex; // index deciding which of the time multiplier options control the simulation
     public double physicFPS; // number of physics frames computed every second
@@ -18,6 +20,7 @@ public class Engine {
 
     public void initializeEngine(double physicsFPS, double leadFactor) {
         this.renderer = new Renderer();
+        this.renderer3D = new Renderer3D();
         this.physicFPS = physicsFPS;
         this.multiplierIndex = 0;
         this.timeStep = timeMultiplierOptions[multiplierIndex] / physicFPS;
@@ -47,11 +50,16 @@ public class Engine {
 
         initializeEngine(physicsFPS, leadFactor);
         renderer.initialize(displayWidth, displayHeight, scaleFactor, camera, world.getSimulationCenter(), world.getOrderedChildren());
+        renderer3D.initialize(displayWidth, displayHeight, scaleFactor, camera, world.getSimulationCenter(), world.getOrderedChildren());
 
         boolean calculateLead = true; // determines whether to (re)calculate the full lead during the following iteration
         while (true) {
             performLeadCalculations(world, calculateLead);
-            renderer.renderFrame();
+            if (isRendering3d) {
+                renderer3D.renderFrame();
+            } else {
+                renderer.renderFrame();
+            }
             // handle movement controls
             boolean thrustEngaged = false; // must re-calculate lead if thrust controls engaged
             if (StdDraw.hasNextKeyTyped()) {
@@ -133,6 +141,9 @@ public class Engine {
             case 's' -> {
                 spacecraft.engageThrust(-1, 0.005);
                 thrustEngaged = true;
+            }
+            case 'p' -> {
+                isRendering3d = !isRendering3d;
             }
         };
         return thrustEngaged;

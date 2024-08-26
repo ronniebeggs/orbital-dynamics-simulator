@@ -37,7 +37,6 @@ public class Engine {
 
         Planet kerbin = new Planet("Kerbin", StdDraw.BLUE, 6378, 5.97 * Math.pow(10, 24));
         Planet mun = new Planet("Mun", kerbin, StdDraw.GRAY, 1737, 0.73 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 5, 0, 0);
-//        Planet duna = new Planet("Duna", kerbin, StdDraw.ORANGE, 2737, 0.5 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 3, 0, 0.1*Math.PI);
         Spacecraft spacecraft = new Spacecraft(kerbin, StdDraw.RED, 10, 7878, 0, 0);
         Camera camera = new Camera(spacecraft, 10000, 0);
         World world = new World(kerbin, spacecraft, camera);
@@ -52,9 +51,6 @@ public class Engine {
         initializeEngine(physicsFPS, leadFactor);
         renderer.initialize(displayWidth, displayHeight, scaleFactor, camera, world.getSimulationCenter(), world.getOrderedChildren());
         renderer3D.initialize(displayWidth, displayHeight, scaleFactor, camera, world.getSimulationCenter(), world.getOrderedChildren());
-
-        world.setCamera();
-        camera.pointToward(kerbin);
 
         boolean calculateLead = true; // determines whether to (re)calculate the full lead during the following iteration
         while (true) {
@@ -73,7 +69,7 @@ public class Engine {
             // must recalculate lead if the spacecraft's parent changes
             boolean parentChanged = world.updateSpacecraftMovement(timeStep);
             world.setCamera();
-            camera.pointToward(kerbin);
+            camera.pointToward(camera.getTarget());
             // lead calculated with larger time step, so lead will sometimes drift away from spacecraft -> must recalculate lead when this occurs
             boolean leadDrift = spacecraft.distanceToFirstLead() > 500;
             calculateLead = thrustEngaged || parentChanged || leadDrift;
@@ -82,7 +78,7 @@ public class Engine {
 
 //            camera.moveTowardTarget(spacecraft, -1000);
             Coordinate cameraPosition = camera.getPosition();
-            System.out.println(camera.getRelativeDirection());
+            System.out.println("RelativeDirection: " + camera.getRelativeDirection());
             System.out.println("CameraX: " + cameraPosition.getX() + ", " + "CameraY: " + cameraPosition.getY() + ", " + "CameraZ: " + cameraPosition.getZ());
             System.out.println("Pitch: " + camera.getDirection().getX() + ", " + "Yaw: " + camera.getDirection().getY() + ", " + "Roll: " + camera.getDirection().getZ());
         }

@@ -5,7 +5,6 @@ import util.Mesh;
 
 public class Camera extends Entity {
     public Satellite target; // target satellite
-    public double absoluteDirection; // viewing angle relative to xy-plane (radians)
     public double relativeDirection; // viewing angle relative to target at 0 (radians)
     public double distanceToTarget; // absolute distance between camera and the target (km)
     public Camera(Satellite initialTarget, double initialDistance) {
@@ -24,12 +23,6 @@ public class Camera extends Entity {
     }
     public Satellite getTarget() {
         return this.target;
-    }
-    public void setAbsoluteDirection(double newDirection) {
-        this.absoluteDirection = newDirection;
-    }
-    public double getAbsoluteDirection() {
-        return this.absoluteDirection;
     }
     public void setRelativeDirection(double newDirection) {
         this.relativeDirection = newDirection;
@@ -56,7 +49,7 @@ public class Camera extends Entity {
         // calculate the yaw (right-left view)
         double deltaX = targetPosition.getX() - cameraPosition.getX();
         double deltaY = targetPosition.getY() - cameraPosition.getY();
-        this.yaw = Math.toDegrees(Math.atan2(deltaY, deltaX)) + 20;
+        this.yaw = Math.toDegrees(Math.atan2(deltaY, deltaX));
         // calculate the pitch (up-down view)
         double deltaZ = targetPosition.getZ() - cameraPosition.getZ();
         double xyDistance = cameraPosition.distanceTo(targetPosition);
@@ -100,10 +93,10 @@ public class Camera extends Entity {
         double Z = (meshParentPosition.getZ() + meshPosition.getZ()) - cameraPosition.getZ();
         // Theta = (thetaX, thetaY, thetaZ) -> tait-bryan angles
         Coordinate cameraDirection = getDirection();
-        double pitch = 0;
-        double yaw = getAbsoluteDirection();
-//        double pitch = Math.toRadians(cameraDirection.getX()); // pitch
-//        double yaw = Math.toRadians(cameraDirection.getY()); // yaw
+//        double pitch = 0;
+//        double yaw = getAbsoluteDirection();
+        double pitch = Math.toRadians(cameraDirection.getX());
+        double yaw = Math.toRadians(cameraDirection.getY());
         // I have no idea if this is going to work
         Matrix inversePitchRotation = new Matrix(new double[][]{
                 new double[]{Math.cos(pitch), 0, -Math.sin(pitch)},

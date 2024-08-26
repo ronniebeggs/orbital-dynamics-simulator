@@ -58,10 +58,11 @@ public class World {
             // align camera view to include both the target and its parent
             double targetRelativeToParent = target.parent.getPosition().angleBetween(targetPosition);
             double angleTowardTarget = targetRelativeToParent + Math.PI;
-            camera.setAbsoluteDirection(angleTowardTarget + camera.getRelativeDirection());
+            Coordinate cameraDirection = camera.getDirection();
+            camera.setDirection(cameraDirection.getX(), angleTowardTarget + camera.getRelativeDirection(), cameraDirection.getZ());
         }
 
-        double angleRelativeToTarget = camera.getAbsoluteDirection() + Math.PI;
+        double angleRelativeToTarget = camera.getDirection().getY() + Math.PI;
         camera.setPosition(
                 targetPosition.getX() + camera.getDistanceToTarget() * Math.cos(angleRelativeToTarget),
                 targetPosition.getY() + camera.getDistanceToTarget() * Math.sin(angleRelativeToTarget)

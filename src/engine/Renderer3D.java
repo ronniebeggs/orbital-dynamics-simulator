@@ -80,7 +80,7 @@ public class Renderer3D {
 //            else if (satellite instanceof Spacecraft spacecraft) {
 //                renderSpacecraft(spacecraft);
 //            }
-////            // render a satellite marker with constant size regardless of zoom
+//            // render a satellite marker with constant size regardless of zoom
 //            if (satellite.equals(targetSatellite)) {
 //                renderSatelliteMarker(satellite.getPosition(), StdDraw.GREEN);
 //            } else {
@@ -160,16 +160,13 @@ public class Renderer3D {
      * */
     public Coordinate transformCoordinate(Coordinate position) {
         Coordinate cameraPosition = camera.getPosition();
-
         double X = position.getX() - cameraPosition.getX();
         double Y = position.getY() - cameraPosition.getY();
         double Z = position.getZ() - cameraPosition.getZ();
         // Theta = (thetaX, thetaY, thetaZ) -> tait-bryan angles
         Coordinate cameraDirection = camera.getDirection();
-        double pitch = 0;
-        double yaw = camera.getAbsoluteDirection();
-//        double pitch = Math.toRadians(cameraDirection.getX()); // pitch
-//        double yaw = Math.toRadians(cameraDirection.getY()); // yaw
+        double pitch = Math.toRadians(cameraDirection.getX());
+        double yaw = Math.toRadians(cameraDirection.getY());
 
         Matrix inversePitchRotation = new Matrix(new double[][]{
                 new double[]{Math.cos(pitch), 0, -Math.sin(pitch)},
@@ -199,29 +196,6 @@ public class Renderer3D {
         double bX = (double) ((eZ / dX) * dY + eX);
         double bY = (double) ((eZ / dX) * dZ + eY);
         return new Coordinate(bX, bY, 0);
-
-
-//        Coordinate cameraPosition = camera.getPosition();
-//        double X = realToDisplayUnits(position.getX() - cameraPosition.getX());
-//        double Y = realToDisplayUnits(position.getY() - cameraPosition.getY());
-//        double Z = realToDisplayUnits(position.getZ() - cameraPosition.getZ());
-//        // Theta = (thetaX, thetaY, thetaZ) -> tait-bryan angles
-//        Coordinate cameraTilt = camera.getCameraTilt();
-//        double thetaX = -Math.toRadians(cameraTilt.getX()); // pitch
-//        double thetaY = -Math.toRadians(cameraTilt.getY() - 90); // yaw
-//        double thetaZ = Math.toRadians(cameraTilt.getZ()); // roll
-//        // I have no idea if this is going to work
-//        double dX = Math.cos(thetaY) * (Math.sin(thetaZ) * Y + Math.cos(thetaZ) * X) - Math.sin(thetaY) * Z;
-//        double dY = Math.sin(thetaX) * (Math.cos(thetaY) * Z + Math.sin(thetaY) * (Math.sin(thetaZ) * Y + Math.cos(thetaZ) * X)) + Math.cos(thetaX) * (Math.cos(thetaZ) * Y - Math.sin(thetaZ) * X);
-//        double dZ = Math.cos(thetaX) * (Math.cos(thetaY) * Z + Math.sin(thetaY) * (Math.sin(thetaZ) * Y + Math.cos(thetaZ) * X)) - Math.sin(thetaX) * (Math.cos(thetaZ) * Y - Math.sin(thetaZ) * X);
-//        // E = (eX, eY, eZ) -> position of the display surface plane position relative to the camera pinhole
-//        double eX = 0;
-//        double eY = 0;
-//        double eZ = focalLength;
-//        // (bX, bY) -> transformed position on the 2d screen surface
-//        double bX = (double) ((eZ / dZ) * dX + eX);
-//        double bY = (double) ((eZ / dZ) * dY + eY);
-//        return new Coordinate(bX, bY, 0);
     }
 
     /**

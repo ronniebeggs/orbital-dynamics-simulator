@@ -101,8 +101,8 @@ public class Renderer {
         double viewLineDistance = 1000;
         Coordinate cameraPosition = camera.getPosition();
         Coordinate cameraViewEndpoint = new Coordinate(
-                cameraPosition.getX() + viewLineDistance * Math.cos(camera.getAbsoluteDirection()),
-                cameraPosition.getY() + viewLineDistance * Math.sin(camera.getAbsoluteDirection())
+                cameraPosition.getX() + viewLineDistance * Math.cos(Math.toRadians(camera.getDirection().getY())),
+                cameraPosition.getY() + viewLineDistance * Math.sin(Math.toRadians(camera.getDirection().getY()))
         );
         Coordinate displayPosition = transformToDisplay(camera.getPosition());
         Coordinate endpointDisplay = transformToDisplay(cameraViewEndpoint);

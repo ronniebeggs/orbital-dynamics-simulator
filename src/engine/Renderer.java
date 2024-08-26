@@ -100,7 +100,6 @@ public class Renderer {
         StdDraw.setPenColor(StdDraw.MAGENTA);
         double viewLineDistance = 1000;
         Coordinate cameraPosition = camera.getPosition();
-        Coordinate cameraViewAngle = camera.getCameraTilt();
         Coordinate cameraViewEndpoint = new Coordinate(
                 cameraPosition.getX() + viewLineDistance * Math.cos(camera.getAbsoluteDirection()),
                 cameraPosition.getY() + viewLineDistance * Math.sin(camera.getAbsoluteDirection())

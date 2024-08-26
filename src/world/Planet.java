@@ -34,9 +34,10 @@ public class Planet extends Satellite {
         double sliceAngle = (double) Math.TAU / numSlices;
         double stackAngle = (double) Math.PI / numStacks;
 
-        Coordinate top = new Coordinate(xPosition, yPosition + radius, zPosition);
-        Coordinate bottom = new Coordinate(xPosition, yPosition - radius, zPosition);
+        Coordinate top = new Coordinate(xPosition, yPosition, zPosition + radius);
+        Coordinate bottom = new Coordinate(xPosition, yPosition, zPosition - radius);
 
+        Color tempColor;
         Color meshColor = color;
         // iterate through each slice (vertical section) and create meshes from the top down
         for (int n = 0; n < numSlices; n++) {
@@ -44,17 +45,17 @@ public class Planet extends Satellite {
             double phi = stackAngle; // angle parallel to y-axis (latitude)
 
             // create top triangle
-            double distanceFromYAxis = radius * Math.sin(phi);
-            double distanceFromXZPlane = radius * Math.cos(phi);
-            double y = distanceFromXZPlane;
+            double distanceFromZAxis = radius * Math.sin(phi);
+            double distanceFromXYPlane = radius * Math.cos(phi);
+            double z = distanceFromXYPlane;
 
-            double x0 = distanceFromYAxis * Math.cos(theta);
-            double z0 = distanceFromYAxis * Math.sin(theta);
-            Coordinate v0 = Transformations.rotateYaw(this, new Coordinate(x0, y, z0));
+            double x0 = distanceFromZAxis * Math.cos(theta);
+            double y0 = distanceFromZAxis * Math.sin(theta);
+            Coordinate v0 = Transformations.rotateYaw(this, new Coordinate(x0, y0, z));
 
-            double x1 = distanceFromYAxis * Math.cos(theta + sliceAngle);
-            double z1 = distanceFromYAxis * Math.sin(theta + sliceAngle);
-            Coordinate v1 = Transformations.rotateYaw(this,new Coordinate(x1, y, z1));
+            double x1 = distanceFromZAxis * Math.cos(theta + sliceAngle);
+            double y1 = distanceFromZAxis * Math.sin(theta + sliceAngle);
+            Coordinate v1 = Transformations.rotateYaw(this,new Coordinate(x1, y1, z));
 
             meshes.add(new Mesh(this, new Coordinate[]{top, v0, v1}, meshColor));
 
@@ -66,17 +67,17 @@ public class Planet extends Satellite {
             for (int m = 1; m < numStacks - 1; m++) {
                 phi += stackAngle;
 
-                distanceFromYAxis = radius * Math.sin(phi);
-                distanceFromXZPlane = radius * Math.cos(phi);
-                y = distanceFromXZPlane;
+                distanceFromZAxis = radius * Math.sin(phi);
+                distanceFromXYPlane = radius * Math.cos(phi);
+                z = distanceFromXYPlane;
 
-                x0 = distanceFromYAxis * Math.cos(theta);
-                z0 = distanceFromYAxis * Math.sin(theta);
-                v0 = Transformations.rotateYaw(this, new Coordinate(x0, y, z0));
+                x0 = distanceFromZAxis * Math.cos(theta);
+                y0 = distanceFromZAxis * Math.sin(theta);
+                v0 = Transformations.rotateYaw(this, new Coordinate(x0, y0, z));
 
-                x1 = xPosition + distanceFromYAxis * Math.cos(theta + sliceAngle);
-                z1 = zPosition + distanceFromYAxis * Math.sin(theta + sliceAngle);
-                v1 = Transformations.rotateYaw(this, new Coordinate(x1, y, z1));
+                x1 = xPosition + distanceFromZAxis * Math.cos(theta + sliceAngle);
+                y1 = yPosition + distanceFromZAxis * Math.sin(theta + sliceAngle);
+                v1 = Transformations.rotateYaw(this, new Coordinate(x1, y1, z));
 
                 meshes.add(new Mesh(this, new Coordinate[]{previousV0, v0, v1, previousV1}, meshColor));
 

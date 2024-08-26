@@ -17,9 +17,12 @@ public class Transformations {
 
         // yaw transformation
         double yawRadians = -Math.toRadians(entity.getDirection().getY());
-        double dX = x * Math.cos(yawRadians) + z * Math.sin(yawRadians);
-        double dY = y;
-        double dZ = -x * Math.sin(yawRadians) + z * Math.cos(yawRadians);
+//        double dX = x * Math.cos(yawRadians) + z * Math.sin(yawRadians);
+//        double dY = y;
+//        double dZ = -x * Math.sin(yawRadians) + z * Math.cos(yawRadians);
+        double dX = x * Math.cos(yawRadians) + y * Math.sin(yawRadians);
+        double dY = -x * Math.sin(yawRadians) + y * Math.cos(yawRadians);
+        double dZ = z;
 
         // transform relative positions to real simulation positions
         Coordinate entityPosition = entity.getPosition();

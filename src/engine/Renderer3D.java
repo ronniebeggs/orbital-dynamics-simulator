@@ -36,25 +36,20 @@ public class Renderer3D {
     private int displayWidth;
     private int displayHeight;
     private double scaleFactor; // number of kilometers displayed per pixel
-    private int targetIndex; // index tracking the target satellite
     private Camera camera;
     private double focalLength;
-    private Satellite simulationCenter;
     private List<Satellite> orderedTargetList;
     private Satellite targetSatellite;
 
-    public void initialize(int width, int height, double scaleFactor, Camera camera, Satellite simulationCenter, List<Satellite> orderedChildren) {
+    public void initialize(int width, int height, double scaleFactor, Camera camera, Satellite targetSatellite, List<Satellite> orderedChildren) {
         this.displayWidth = width;
         this.displayHeight = height;
         this.scaleFactor = scaleFactor;
         this.camera = camera;
         int verticalViewAngle = 60;
         this.focalLength = displayHeight / (2 * Math.tan(Math.toRadians(verticalViewAngle)));
-
-        this.simulationCenter = simulationCenter;
+        this.targetSatellite = targetSatellite;
         this.orderedTargetList = orderedChildren;
-        this.targetIndex = 0;
-        this.targetSatellite = orderedTargetList.get(targetIndex);
 
         StdDraw.setCanvasSize(width, height);
         StdDraw.setXscale(0, width);
@@ -74,43 +69,21 @@ public class Renderer3D {
         // iterate through each satellite and trigger corresponding render method based on satellite type
         for (Satellite satellite : orderedTargetList) {
             renderSatellite(satellite);
-//            if (satellite instanceof Planet planet) {
-//                renderPlanet(planet);
-//            }
-//            else if (satellite instanceof Spacecraft spacecraft) {
-//                renderSpacecraft(spacecraft);
-//            }
-//            // render a satellite marker with constant size regardless of zoom
-//            if (satellite.equals(targetSatellite)) {
-//                renderSatelliteMarker(satellite.getPosition(), StdDraw.GREEN);
-//            } else {
-//                renderSatelliteMarker(satellite.getPosition(), StdDraw.PRINCETON_ORANGE);
-//            }
+            // render a satellite marker with constant size regardless of zoom
+            if (camera.distanceToViewPlane(satellite.getPosition()) >= 100) {
+                if (satellite.equals(targetSatellite)) {
+                    renderSatelliteMarker(satellite.getPosition(), StdDraw.GREEN);
+                } else {
+                    renderSatelliteMarker(satellite.getPosition(), StdDraw.PRINCETON_ORANGE);
+                }
+            }
         }
         StdDraw.show();
     }
     /**
-     * Method for rendering planet objects.
-     * @param planet specified planet instance.
+     * Method for rendering satellite objects.
+     * @param satellite specified satellite instance.
      * */
-    public void renderPlanet(Planet planet) {
-        // map each mesh to its distance relative to the camera, and place within priority queue.
-        PriorityQueue<MeshRankNode> meshRank = new PriorityQueue<>();
-        for (Mesh mesh : planet.getMeshes()) {
-            Coordinate meshPosition = mesh.averagePosition();
-            Coordinate cameraPosition = camera.getPosition();
-            double distanceToCamera = cameraPosition.distance3D(meshPosition);
-            meshRank.add(new MeshRankNode(mesh, distanceToCamera));
-        }
-        // render each mesh in decreasing order relative to the camera to mitigate rendering overlap.
-        while (!meshRank.isEmpty()) {
-            Mesh currentMesh = meshRank.remove().mesh;
-            if (shouldRenderMesh(currentMesh, 1000)) {
-                renderMesh(currentMesh);
-            }
-        }
-    }
-
     public void renderSatellite(Satellite satellite) {
         // map each mesh to its distance relative to the camera, and place within priority queue.
         PriorityQueue<MeshRankNode> meshRank = new PriorityQueue<>();
@@ -129,9 +102,21 @@ public class Renderer3D {
         }
     }
 
+    public void renderSatelliteMarker(Coordinate satelliteCenter, Color color) {
+        StdDraw.setPenColor(color);
+        Coordinate transformed = transformCoordinate(satelliteCenter);
+        double displayX = transformed.getX() + (double) displayWidth / 2;
+        double displayY = transformed.getY() + (double) displayHeight / 2;
+
+        StdDraw.filledPolygon(
+                new double[]{displayX, displayX - 5, displayX + 5},
+                new double[]{displayY, displayY + 10, displayY + 10}
+        );
+    }
+
     /**
      * Draw and fill the mesh using StdDraw library.
-     * @param mesh mesh to be rendered.
+     * @param mesh mesh to be renxdered.
      * */
     public void renderMesh(Mesh mesh) {
 //        Color adjustedColor = shadeMesh(mesh);
@@ -199,21 +184,6 @@ public class Renderer3D {
     }
 
     /**
-     * Changes the real distance : display distance ratio to produce zoom effects.
-     * @param multiplier factor to multiply the current `scaleFactor` by.
-     * */
-    public void changeScaleFactor(double multiplier) {
-        scaleFactor *= multiplier;
-    }
-    /**
-     * Shift the index which decides which of the satellites will be centrally displayed.
-     * @param indexChange value to shift the current index (will wrap around).
-     * */
-    public void changeTargetIndex(int indexChange) {
-        targetIndex = (targetIndex + indexChange + orderedTargetList.size()) % orderedTargetList.size();
-        targetSatellite = orderedTargetList.get(targetIndex);
-    }
-    /**
      * Scale simulation distances to display distances.
      * @param realPosition simulation distance to be scaled (km).
      * @return resulting distance relative to the display (display pixels).
@@ -223,7 +193,15 @@ public class Renderer3D {
     }
 
     public boolean shouldRenderMesh(Mesh mesh, double frontClip) {
-        return camera.distanceToViewPlane(mesh) >= frontClip;
+        Coordinate meshPosition = mesh.averagePosition();
+        Coordinate meshParentPosition = mesh.getParent().getPosition();
+        return camera.distanceToViewPlane(
+                new Coordinate(
+                        meshParentPosition.getX() + meshPosition.getX(),
+                        meshParentPosition.getY() + meshPosition.getY(),
+                        meshParentPosition.getZ() + meshPosition.getZ()
+                )
+        ) >= frontClip;
     }
 }
 

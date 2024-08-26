@@ -50,7 +50,7 @@ public class Engine {
 
         initializeEngine(physicsFPS, leadFactor);
         renderer.initialize(displayWidth, displayHeight, scaleFactor, camera, world.getSimulationCenter(), world.getOrderedChildren());
-        renderer3D.initialize(displayWidth, displayHeight, scaleFactor, camera, world.getSimulationCenter(), world.getOrderedChildren());
+        renderer3D.initialize(displayWidth, displayHeight, scaleFactor, camera, spacecraft, world.getOrderedChildren());
 
         boolean calculateLead = true; // determines whether to (re)calculate the full lead during the following iteration
         while (true) {
@@ -76,7 +76,6 @@ public class Engine {
             // increment iteration counter; ensure it doesn't exceed max value
             iterationCounter = (iterationCounter + 1) % Long.MAX_VALUE;
 
-//            camera.moveTowardTarget(spacecraft, -1000);
             Coordinate cameraPosition = camera.getPosition();
             System.out.println("RelativeDirection: " + camera.getRelativeDirection());
             System.out.println("CameraX: " + cameraPosition.getX() + ", " + "CameraY: " + cameraPosition.getY() + ", " + "CameraZ: " + cameraPosition.getZ());

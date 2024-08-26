@@ -84,17 +84,13 @@ public class Camera extends Entity {
 //        pointToward(target);
     }
 
-    public double distanceToViewPlane(Mesh mesh) {
+    public double distanceToViewPlane(Coordinate coordinate) {
         Coordinate cameraPosition = getPosition();
-        Coordinate meshPosition = mesh.averagePosition();
-        Coordinate meshParentPosition = mesh.getParent().getPosition();
-        double X = (meshParentPosition.getX() + meshPosition.getX()) - cameraPosition.getX();
-        double Y = (meshParentPosition.getY() + meshPosition.getY()) - cameraPosition.getY();
-        double Z = (meshParentPosition.getZ() + meshPosition.getZ()) - cameraPosition.getZ();
+        double X = coordinate.getX() - cameraPosition.getX();
+        double Y = coordinate.getY() - cameraPosition.getY();
+        double Z = coordinate.getZ() - cameraPosition.getZ();
         // Theta = (thetaX, thetaY, thetaZ) -> tait-bryan angles
         Coordinate cameraDirection = getDirection();
-//        double pitch = 0;
-//        double yaw = getAbsoluteDirection();
         double pitch = Math.toRadians(cameraDirection.getX());
         double yaw = Math.toRadians(cameraDirection.getY());
         // I have no idea if this is going to work

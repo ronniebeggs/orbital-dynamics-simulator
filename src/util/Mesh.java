@@ -78,4 +78,21 @@ public class Mesh {
         }
         return new Coordinate(xSum / numVertices, ySum / numVertices, zSum / numVertices);
     }
+
+    public Coordinate averageWorldPosition() {
+        double xSum = 0;
+        double ySum = 0;
+        double zSum = 0;
+        for (Coordinate vertex : vertices) {
+            xSum += vertex.getX();
+            ySum += vertex.getY();
+            zSum += vertex.getZ();
+        }
+        Coordinate parentPosition = getParent().getPosition();
+        return new Coordinate(
+                parentPosition.getX() + (xSum / numVertices),
+                parentPosition.getY() + (ySum / numVertices),
+                parentPosition.getZ() + (zSum / numVertices)
+        );
+    }
 }

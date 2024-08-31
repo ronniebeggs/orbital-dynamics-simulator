@@ -1,11 +1,12 @@
 package engine;
 
 import edu.princeton.cs.algs4.StdDraw;
+import jdk.swing.interop.LightweightContentWrapper;
 import util.Coordinate;
-import world.Camera;
-import world.Planet;
-import world.Spacecraft;
-import world.World;
+import world.*;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class Engine {
     public Renderer renderer;
@@ -35,11 +36,16 @@ public class Engine {
      * */
     public void mainLoop() {
 
-        Planet kerbin = new Planet("Kerbin", StdDraw.BLUE, 6378, 5.97 * Math.pow(10, 24));
-        Planet mun = new Planet("Mun", kerbin, StdDraw.GRAY, 1737, 0.73 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 5, 0, 0);
-        Spacecraft spacecraft = new Spacecraft(kerbin, StdDraw.RED, 10, 7878, 0, 0);
+        Planet sun = new Planet("Sun", StdDraw.WHITE, 6378, 5.97 * Math.pow(10, 24));
+        Planet kerbin = new Planet("Kerbin", sun, StdDraw.BLUE, 4737, 0.73 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 5, 0, 0);
+        Spacecraft spacecraft = new Spacecraft(kerbin, StdDraw.RED, 10, 7878, 0, Math.PI);
         Camera camera = new Camera(spacecraft, 10000, 0);
-        World world = new World(kerbin, spacecraft, camera);
+        World world = new World(sun, spacecraft, camera);
+
+        Entity light = new Entity(0, 0, 0, 0, 0, 0);
+        Entity[] lightSources = new Entity[]{light};
+        Set<Entity> lightEmitters = new HashSet<>();
+        lightEmitters.add(sun);
 
         int physicsFPS = 240;
         int leadFactor = 10000;
@@ -50,7 +56,7 @@ public class Engine {
 
         initializeEngine(physicsFPS, leadFactor);
         renderer.initialize(displayWidth, displayHeight, scaleFactor, camera, world.getSimulationCenter(), world.getOrderedChildren());
-        renderer3D.initialize(displayWidth, displayHeight, scaleFactor, camera, spacecraft, world.getOrderedChildren());
+        renderer3D.initialize(displayWidth, displayHeight, scaleFactor, camera, spacecraft, world.getOrderedChildren(), lightSources, lightEmitters);
 
         boolean calculateLead = true; // determines whether to (re)calculate the full lead during the following iteration
         while (true) {
@@ -75,11 +81,6 @@ public class Engine {
             calculateLead = thrustEngaged || parentChanged || leadDrift;
             // increment iteration counter; ensure it doesn't exceed max value
             iterationCounter = (iterationCounter + 1) % Long.MAX_VALUE;
-
-            Coordinate cameraPosition = camera.getPosition();
-            System.out.println("RelativeDirection: " + camera.getRelativeDirection());
-            System.out.println("CameraX: " + cameraPosition.getX() + ", " + "CameraY: " + cameraPosition.getY() + ", " + "CameraZ: " + cameraPosition.getZ());
-            System.out.println("Pitch: " + camera.getDirection().getX() + ", " + "Yaw: " + camera.getDirection().getY() + ", " + "Roll: " + camera.getDirection().getZ());
         }
     }
     /**

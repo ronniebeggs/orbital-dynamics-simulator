@@ -1,5 +1,6 @@
 package world;
 
+import edu.princeton.cs.algs4.StdDraw;
 import util.Coordinate;
 import util.Mesh;
 import util.Transformations;

@@ -8,9 +8,9 @@ import util.Transformations;
 import world.*;
 
 import java.awt.Color;
-import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.Set;
 
 public class Renderer3D {
     /**
@@ -39,9 +39,11 @@ public class Renderer3D {
     private Camera camera;
     private double focalLength;
     private List<Satellite> orderedTargetList;
+    private Entity[] lightSources;
+    private Set<Entity> lightEmitters;
     private Satellite targetSatellite;
 
-    public void initialize(int width, int height, double scaleFactor, Camera camera, Satellite targetSatellite, List<Satellite> orderedChildren) {
+    public void initialize(int width, int height, double scaleFactor, Camera camera, Satellite targetSatellite, List<Satellite> orderedChildren, Entity[] lightSources, Set<Entity> lightEmitters) {
         this.displayWidth = width;
         this.displayHeight = height;
         this.scaleFactor = scaleFactor;
@@ -50,6 +52,8 @@ public class Renderer3D {
         this.focalLength = displayHeight / (2 * Math.tan(Math.toRadians(verticalViewAngle)));
         this.targetSatellite = targetSatellite;
         this.orderedTargetList = orderedChildren;
+        this.lightSources = lightSources;
+        this.lightEmitters = lightEmitters;
 
         StdDraw.setCanvasSize(width, height);
         StdDraw.setXscale(0, width);
@@ -88,7 +92,7 @@ public class Renderer3D {
         // map each mesh to its distance relative to the camera, and place within priority queue.
         PriorityQueue<MeshRankNode> meshRank = new PriorityQueue<>();
         for (Mesh mesh : satellite.getMeshes()) {
-            Coordinate meshPosition = mesh.averagePosition();
+            Coordinate meshPosition = mesh.averageWorldPosition();
             Coordinate cameraPosition = camera.getPosition();
             double distanceToCamera = cameraPosition.distance3D(meshPosition);
             meshRank.add(new MeshRankNode(mesh, distanceToCamera));
@@ -115,12 +119,58 @@ public class Renderer3D {
     }
 
     /**
+     * Shade the mesh using the `lightSource`s in the simulation.
+     * @param mesh target mesh to apply the shader too.
+     * @return adjusted shader color.
+     * */
+    public Color shadeMesh(Mesh mesh) {
+        double strongestFacingRatio = 0.1;
+        // iterate through lightSources and find the brightest light
+        for (int lightIndex = 0; lightIndex < lightSources.length; lightIndex++) {
+            Entity light = lightSources[lightIndex];
+            // light sources shouldn't light themselves up
+            if (light.equals(mesh.getParent())) {
+                continue;
+            }
+
+            Coordinate lightPosition = light.getPosition();
+            Coordinate meshPosition = mesh.averagePosition();
+            Coordinate meshParentPosition = mesh.getParent().getPosition();
+            Coordinate lightVector = Transformations.normalize(new Coordinate(
+                    lightPosition.getX() - (meshParentPosition.getX() + meshPosition.getX()),
+                    lightPosition.getY() - (meshParentPosition.getY() + meshPosition.getY()),
+                    lightPosition.getZ() - (meshParentPosition.getZ() + meshPosition.getZ())
+            ));
+
+            double facingRatio = Transformations.dotProduct(lightVector, mesh.getNormalVector());
+            if (facingRatio > strongestFacingRatio) {
+                strongestFacingRatio = facingRatio;
+            }
+        }
+        // shade the mesh according to the brightest light source
+        double brightnessProportion = strongestFacingRatio * 1;
+        float[] colorComponents = new float[3];
+        mesh.getColor().getColorComponents(colorComponents);
+        return new Color(
+                (int) (colorComponents[0] * brightnessProportion * 255),
+                (int) (colorComponents[1] * brightnessProportion * 255),
+                (int) (colorComponents[2] * brightnessProportion * 255)
+        );
+    }
+
+    /**
      * Draw and fill the mesh using StdDraw library.
      * @param mesh mesh to be renxdered.
      * */
     public void renderMesh(Mesh mesh) {
-//        Color adjustedColor = shadeMesh(mesh);
-        StdDraw.setPenColor(mesh.getColor());
+        RenderableEntity meshParent = mesh.getParent();
+        // light emitting entities won't have shadows
+        if (lightEmitters.contains(meshParent)) {
+            StdDraw.setPenColor(mesh.getColor());
+        } else {
+            Color adjustedColor = shadeMesh(mesh);
+            StdDraw.setPenColor(adjustedColor);
+        }
         int numVertices = mesh.getNumVertices();
         double[] xVertices = new double[numVertices];
         double[] yVertices = new double[numVertices];

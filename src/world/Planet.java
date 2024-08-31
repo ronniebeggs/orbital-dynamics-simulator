@@ -19,8 +19,8 @@ public class Planet extends Satellite {
         super(parent, color, mass, orbitalRadius, orbitalVelocity, trueAnomaly);
         this.name = name;
         this.radius = radius;
-        this.numSlices = 24;
-        this.numStacks = 12;
+        this.numSlices = 48;
+        this.numStacks = 24;
         createMesh();
     }
 
@@ -37,7 +37,6 @@ public class Planet extends Satellite {
         Coordinate top = new Coordinate(xPosition, yPosition, zPosition + radius);
         Coordinate bottom = new Coordinate(xPosition, yPosition, zPosition - radius);
 
-        Color tempColor;
         Color meshColor = color;
         // iterate through each slice (vertical section) and create meshes from the top down
         for (int n = 0; n < numSlices; n++) {
@@ -80,6 +79,7 @@ public class Planet extends Satellite {
                 v1 = Transformations.rotateYaw(this, new Coordinate(x1, y1, z));
 
                 meshes.add(new Mesh(this, new Coordinate[]{previousV0, v0, v1, previousV1}, meshColor));
+
 
                 previousV0 = v0;
                 previousV1 = v1;

@@ -159,10 +159,10 @@ public class Engine {
                 camera.moveTowardTarget(100);
             }
             case 'j' -> {
-                camera.rotateAroundTarget(-10);
+                camera.rotateAroundTarget(10);
             }
             case 'l' -> {
-                camera.rotateAroundTarget(10);
+                camera.rotateAroundTarget(-10);
             }
         };
         return thrustEngaged;

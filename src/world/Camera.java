@@ -7,11 +7,6 @@ public class Camera extends Entity {
     public Satellite target; // target satellite
     public double relativeDirection; // viewing angle relative to target at 0 (radians)
     public double distanceToTarget; // absolute distance between camera and the target (km)
-    public Camera(Satellite initialTarget, double initialDistance) {
-        super(0, 0, 0, 0, 0, 0);
-        this.target = initialTarget;
-        this.distanceToTarget = initialDistance;
-    }
     public Camera(Satellite initialTarget, double initialDistance, double initialTrueAnamoly) {
         super(0, 0, 0, 0, 0, 0);
         this.target = initialTarget;
@@ -24,14 +19,8 @@ public class Camera extends Entity {
     public Satellite getTarget() {
         return this.target;
     }
-    public void setRelativeDirection(double newDirection) {
-        this.relativeDirection = newDirection;
-    }
     public double getRelativeDirection() {
         return this.relativeDirection;
-    }
-    public void setDistanceToTarget(double newDistance) {
-        this.distanceToTarget = newDistance;
     }
     public double getDistanceToTarget() {
         return this.distanceToTarget;
@@ -61,27 +50,6 @@ public class Camera extends Entity {
      * */
     public void moveTowardTarget(double distance) {
         this.distanceToTarget += distance;
-//        Coordinate cameraPosition = getPosition();
-//        Coordinate targetPosition = target.getPosition();
-//        // calculate the angle of the camera relative to the target in the x-y plane
-//        double deltaX = cameraPosition.getX() - targetPosition.getX();
-//        double deltaY = cameraPosition.getY() - targetPosition.getY();
-//        double relativeAngleXY = Math.atan2(deltaY, deltaX);
-//        double currentDistanceXY = cameraPosition.distanceTo(targetPosition);
-//        // calculate the angle of the camera relative to the target in the xy-z plane
-//        double deltaZ = cameraPosition.getZ() - targetPosition.getZ();
-//        double relativeAngleZ = Math.atan2(deltaZ, currentDistanceXY);
-//        // calculate the position changes that occur from this zooming movement
-//        double distance3D = cameraPosition.distance3D(targetPosition);
-//        double newZHeight = (distance3D - distance) * Math.sin(relativeAngleZ);
-//        double newXYDistance = (distance3D - distance) * Math.cos(relativeAngleZ);
-//        // update camera position and view angle
-//        this.setPosition(
-//                targetPosition.getX() + newXYDistance * Math.cos(relativeAngleXY),
-//                targetPosition.getY() + newXYDistance * Math.sin(relativeAngleXY),
-//                targetPosition.getZ() + newZHeight
-//        );
-//        pointToward(target);
     }
 
     public double distanceToViewPlane(Coordinate coordinate) {

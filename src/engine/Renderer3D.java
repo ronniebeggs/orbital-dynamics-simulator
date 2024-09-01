@@ -8,9 +8,7 @@ import util.Transformations;
 import world.*;
 
 import java.awt.Color;
-import java.util.List;
-import java.util.PriorityQueue;
-import java.util.Set;
+import java.util.*;
 
 public class Renderer3D {
     /**
@@ -33,6 +31,23 @@ public class Renderer3D {
         }
 
     }
+
+    public static class SatelliteRenderingOrderComparator implements Comparator<Satellite> {
+        public Coordinate relativeCenter;
+        public SatelliteRenderingOrderComparator(Coordinate relativeCenter) {
+            this.relativeCenter = relativeCenter;
+        }
+        @Override
+        public int compare(Satellite o1, Satellite o2) {
+            if (o1 instanceof Satellite satellite1 && o2 instanceof Satellite satellite2) {
+                double distance1 = relativeCenter.distance3D(satellite1.getPosition());
+                double distance2 = relativeCenter.distance3D(satellite2.getPosition());
+                return (int) ((distance2 - distance1) / Math.abs(distance2 - distance1));
+            }
+            return 0;
+        }
+    }
+
     private int displayWidth;
     private int displayHeight;
     private double scaleFactor; // number of kilometers displayed per pixel
@@ -71,7 +86,10 @@ public class Renderer3D {
         StdDraw.clear(new Color(0, 0, 0));
         StdDraw.enableDoubleBuffering();
         // iterate through each satellite and trigger corresponding render method based on satellite type
-        for (Satellite satellite : orderedTargetList) {
+        for (Satellite satellite : orderedTargetList.stream()
+                .sorted(new SatelliteRenderingOrderComparator(camera.getPosition()))
+                .toList()
+        ) {
             renderSatellite(satellite);
             // render a satellite marker with constant size regardless of zoom
             if (camera.distanceToViewPlane(satellite.getPosition()) >= 100) {
@@ -105,19 +123,22 @@ public class Renderer3D {
             }
         }
     }
-
-    public void renderSatelliteMarker(Coordinate satelliteCenter, Color color) {
+    /**
+     * Method for rendering satellite markers.
+     * @param coordinate specified satellite instance.
+     * @param color satellite marker color.
+     * */
+    public void renderSatelliteMarker(Coordinate coordinate, Color color) {
         StdDraw.setPenColor(color);
-        Coordinate transformed = transformCoordinate(satelliteCenter);
-        double displayX = transformed.getX() + (double) displayWidth / 2;
-        double displayY = transformed.getY() + (double) displayHeight / 2;
+        Coordinate transformed = transformCoordinate(coordinate);
+        double displayX = ((double) displayWidth / 2) - transformed.getX();
+        double displayY = ((double) displayHeight / 2) - transformed.getY();
 
         StdDraw.filledPolygon(
                 new double[]{displayX, displayX - 5, displayX + 5},
                 new double[]{displayY, displayY + 10, displayY + 10}
         );
     }
-
     /**
      * Shade the mesh using the `lightSource`s in the simulation.
      * @param mesh target mesh to apply the shader too.
@@ -157,7 +178,6 @@ public class Renderer3D {
                 (int) (colorComponents[2] * brightnessProportion * 255)
         );
     }
-
     /**
      * Draw and fill the mesh using StdDraw library.
      * @param mesh mesh to be renxdered.
@@ -183,8 +203,8 @@ public class Renderer3D {
                     meshParentPosition.getZ() + meshVertex.getZ()
             );
             Coordinate transformed = transformCoordinate(adjustedVertex);
-            xVertices[i] = transformed.getX() + (double) displayWidth / 2;
-            yVertices[i] = transformed.getY() + (double) displayHeight / 2;
+            xVertices[i] = ((double) displayWidth / 2) - transformed.getX();
+            yVertices[i] = ((double) displayHeight / 2) - transformed.getY();
         }
         StdDraw.filledPolygon(xVertices, yVertices);
     }
@@ -232,7 +252,6 @@ public class Renderer3D {
         double bY = (double) ((eZ / dX) * dZ + eY);
         return new Coordinate(bX, bY, 0);
     }
-
     /**
      * Scale simulation distances to display distances.
      * @param realPosition simulation distance to be scaled (km).
@@ -241,7 +260,12 @@ public class Renderer3D {
     private double realToDisplayUnits(double realPosition) {
         return Math.round(realPosition / scaleFactor);
     }
-
+    /**
+     * Determine whether a given mesh is within the camera's field of view.
+     * @param mesh target mesh.
+     * @param frontClip closest allowable distance for a mesh to be rendered.
+     * @return whether the mesh should be rendered.
+     */
     public boolean shouldRenderMesh(Mesh mesh, double frontClip) {
         Coordinate meshPosition = mesh.averagePosition();
         Coordinate meshParentPosition = mesh.getParent().getPosition();

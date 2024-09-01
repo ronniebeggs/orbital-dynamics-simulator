@@ -11,9 +11,11 @@ public class World {
     public List<Satellite> orderedSatellites;
     public Satellite simulationCenter;
     public Spacecraft spacecraft;
-    public World(Satellite center, Spacecraft spacecraft) {
+    public Camera camera;
+    public World(Satellite center, Spacecraft spacecraft, Camera camera) {
         this.simulationCenter = center;
         this.spacecraft = spacecraft;
+        this.camera = camera;
         this.satellites = new HashSet<>();
         this.planets = new HashSet<>();
         initializeWorld();
@@ -46,6 +48,25 @@ public class World {
             );
             insertSatellite(child);
         }
+        setCamera();
+    }
+    public void setCamera() {
+        Satellite target = camera.getTarget();
+        Coordinate targetPosition = target.getPosition();
+
+        if (target.parent != null) {
+            // align camera view to include both the target and its parent
+            double targetRelativeToParent = target.parent.getPosition().angleBetween(targetPosition);
+            double angleTowardTarget = targetRelativeToParent + Math.PI;
+            Coordinate cameraDirection = camera.getDirection();
+            camera.setDirection(cameraDirection.getX(), angleTowardTarget + camera.getRelativeDirection(), cameraDirection.getZ());
+        }
+
+        double angleRelativeToTarget = camera.getDirection().getY() + Math.PI;
+        camera.setPosition(
+                targetPosition.getX() + camera.getDistanceToTarget() * Math.cos(angleRelativeToTarget),
+                targetPosition.getY() + camera.getDistanceToTarget() * Math.sin(angleRelativeToTarget)
+        );
     }
     /**
      * Declare satellite as a trackable and renderable entity within the world.
@@ -86,6 +107,7 @@ public class World {
     public void updatePlanetMovement(double timeStep) {
         for (int index = 1; index < orderedSatellites.size(); index++) {
             if (orderedSatellites.get(index) instanceof Planet planet) {
+//                System.out.println(planet.name + ": " + planet.getPosition().getX() + ", " + planet.getPosition().getY() + ", " + + planet.getPosition().getZ());
                 Coordinate planetPosition = planet.getPosition();
                 Coordinate parentPosition = planet.parent.getPosition();
 

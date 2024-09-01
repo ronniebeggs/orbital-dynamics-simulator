@@ -1,12 +1,17 @@
 package engine;
 
 import edu.princeton.cs.algs4.StdDraw;
-import world.Planet;
-import world.Spacecraft;
-import world.World;
+import jdk.swing.interop.LightweightContentWrapper;
+import util.Coordinate;
+import world.*;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class Engine {
     public Renderer renderer;
+    public Renderer3D renderer3D;
+    public boolean isRendering3d = true;
     public final double[] timeMultiplierOptions = new double[]{1, 10, 100, 1000, 10000};
     public int multiplierIndex; // index deciding which of the time multiplier options control the simulation
     public double physicFPS; // number of physics frames computed every second
@@ -17,6 +22,7 @@ public class Engine {
 
     public void initializeEngine(double physicsFPS, double leadFactor) {
         this.renderer = new Renderer();
+        this.renderer3D = new Renderer3D();
         this.physicFPS = physicsFPS;
         this.multiplierIndex = 0;
         this.timeStep = timeMultiplierOptions[multiplierIndex] / physicFPS;
@@ -30,11 +36,16 @@ public class Engine {
      * */
     public void mainLoop() {
 
-        Planet kerbin = new Planet("Kerbin", StdDraw.BLUE, 6378, 5.97 * Math.pow(10, 24));
-        Planet mun = new Planet("Mun", kerbin, StdDraw.GRAY, 1737, 0.73 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 5, 0, 0);
-        Planet duna = new Planet("Duna", kerbin, StdDraw.ORANGE, 2737, 0.5 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 3, 0, 0.1*Math.PI);
-        Spacecraft spacecraft = new Spacecraft(kerbin, StdDraw.RED, 10, 7878, 0, -0.62 * Math.PI);
-        World world = new World(kerbin, spacecraft);
+        Planet sun = new Planet("Sun", StdDraw.WHITE, 6378, 5.97 * Math.pow(10, 24));
+        Planet kerbin = new Planet("Kerbin", sun, StdDraw.BLUE, 4737, 0.73 * Math.pow(10, 24), 0.384 * Math.pow(10, 6) / 5, 0, 0);
+        Spacecraft spacecraft = new Spacecraft(kerbin, StdDraw.RED, 10, 7878, 0, Math.PI);
+        Camera camera = new Camera(spacecraft, 10000, 0);
+        World world = new World(sun, spacecraft, camera);
+
+        Entity light = new Entity(0, 0, 0, 0, 0, 0);
+        Entity[] lightSources = new Entity[]{light};
+        Set<Entity> lightEmitters = new HashSet<>();
+        lightEmitters.add(sun);
 
         int physicsFPS = 240;
         int leadFactor = 10000;
@@ -44,20 +55,27 @@ public class Engine {
         int scaleFactor = initialSimulationWidth / displayWidth;
 
         initializeEngine(physicsFPS, leadFactor);
-        renderer.initialize(displayWidth, displayHeight, scaleFactor, world.getSimulationCenter(), world.getOrderedChildren());
+        renderer.initialize(displayWidth, displayHeight, scaleFactor, camera, world.getSimulationCenter(), world.getOrderedChildren());
+        renderer3D.initialize(displayWidth, displayHeight, scaleFactor, camera, spacecraft, world.getOrderedChildren(), lightSources, lightEmitters);
 
         boolean calculateLead = true; // determines whether to (re)calculate the full lead during the following iteration
         while (true) {
             performLeadCalculations(world, calculateLead);
-            renderer.renderFrame();
+            if (isRendering3d) {
+                renderer3D.renderFrame();
+            } else {
+                renderer.renderFrame();
+            }
             // handle movement controls
             boolean thrustEngaged = false; // must re-calculate lead if thrust controls engaged
             if (StdDraw.hasNextKeyTyped()) {
-                thrustEngaged = handleMovement(spacecraft, StdDraw.nextKeyTyped());
+                thrustEngaged = handleMovement(spacecraft, camera, StdDraw.nextKeyTyped());
             }
             world.updatePlanetMovement(timeStep);
             // must recalculate lead if the spacecraft's parent changes
             boolean parentChanged = world.updateSpacecraftMovement(timeStep);
+            world.setCamera();
+            camera.pointToward(camera.getTarget());
             // lead calculated with larger time step, so lead will sometimes drift away from spacecraft -> must recalculate lead when this occurs
             boolean leadDrift = spacecraft.distanceToFirstLead() > 500;
             calculateLead = thrustEngaged || parentChanged || leadDrift;
@@ -98,7 +116,7 @@ public class Engine {
      * @param keyPress character input from the `StdDraw` key press queue.
      * @return boolean indicating if thrust controls were initiated by users; must trigger a lead re-calculation.
      * */
-    public boolean handleMovement(Spacecraft spacecraft, char keyPress) {
+    public boolean handleMovement(Spacecraft spacecraft, Camera camera, char keyPress) {
         boolean thrustEngaged = false;
         switch (keyPress) {
             // ZOOM IN/OUT:
@@ -130,6 +148,21 @@ public class Engine {
             case 's' -> {
                 spacecraft.engageThrust(-1, 0.005);
                 thrustEngaged = true;
+            }
+            case 'p' -> {
+                isRendering3d = !isRendering3d;
+            }
+            case 'i' -> {
+                camera.moveTowardTarget(-100);
+            }
+            case 'k' -> {
+                camera.moveTowardTarget(100);
+            }
+            case 'j' -> {
+                camera.rotateAroundTarget(10);
+            }
+            case 'l' -> {
+                camera.rotateAroundTarget(-10);
             }
         };
         return thrustEngaged;
